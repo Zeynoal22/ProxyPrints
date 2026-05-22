@@ -1,842 +1,1646 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MTG Proxy Generator</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<style>
-  :root {
-    --bg:#0d0f0a;--surface:#141810;--surface2:#1a1f15;--border:#2e3828;
-    --gold:#c9a84c;--gold-dim:#8a6e2f;--green:#3a5c2e;--green-hi:#4f7a3f;
-    --text:#d9cfc0;--text-dim:#7a7060;--error:#c0392b;--radius:6px;
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',Georgia,serif;font-size:16px;min-height:100vh;display:flex;flex-direction:column}
-  header{border-bottom:1px solid var(--border);padding:22px 32px 18px;display:flex;align-items:flex-end;gap:16px;background:linear-gradient(180deg,#0a0d08 0%,var(--bg) 100%)}
-  .logo-icon{width:36px;height:36px;background:var(--gold);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);flex-shrink:0}
-  h1{font-family:'Cinzel',serif;font-size:1.5rem;font-weight:700;letter-spacing:0.12em;color:var(--gold);line-height:1}
-  h1 span{color:var(--text-dim);font-weight:400;font-size:0.75rem;display:block;margin-top:4px;letter-spacing:0.2em;font-family:'Crimson Pro',serif;font-style:italic}
-  main{flex:1;display:grid;grid-template-columns:300px 1fr;gap:32px;max-width:1400px;width:100%;margin:0 auto;padding:28px 32px}
-  .panel{display:flex;flex-direction:column;gap:16px}
-  .field-label{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.18em;color:var(--gold-dim);text-transform:uppercase;display:block;margin-bottom:7px}
-  textarea{width:100%;height:240px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'Courier New',monospace;font-size:0.8rem;line-height:1.7;padding:12px;resize:vertical;outline:none;transition:border-color 0.2s}
-  textarea:focus{border-color:var(--gold-dim)}
-  textarea::placeholder{color:var(--text-dim)}
-  select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'Crimson Pro',serif;font-size:0.9rem;padding:9px 32px 9px 12px;outline:none;cursor:pointer;transition:border-color 0.2s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a6e2f'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
-  select:focus{border-color:var(--gold-dim)}
-  select option{background:#1a1f15}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;padding:11px 24px;border-radius:var(--radius);border:none;cursor:pointer;transition:all 0.18s;width:100%}
-  .btn-primary{background:var(--green);color:#d4efcc;border:1px solid var(--green-hi)}
-  .btn-primary:hover:not(:disabled){background:var(--green-hi)}
-  .btn-primary:disabled{opacity:0.4;cursor:not-allowed}
-  .btn-gold{background:var(--gold);color:#1a1500;border:1px solid #e0be6a;font-weight:600}
-  .btn-gold:hover:not(:disabled){background:#dbb85a}
-  .btn-gold:disabled{opacity:0.3;cursor:not-allowed}
-  .btn-ghost{background:transparent;color:var(--text-dim);border:1px solid var(--border);width:auto;padding:7px 16px;font-size:0.65rem}
-  .btn-ghost:hover{border-color:var(--gold-dim);color:var(--gold-dim)}
-  .stats{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center}
-  .stat-val{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--gold);font-weight:700;line-height:1}
-  .stat-lbl{font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-top:3px}
-  #log{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;font-size:0.76rem;color:var(--text-dim);font-style:italic;min-height:40px;line-height:1.5}
-  #log.error{color:var(--error);border-color:#5a1a1a}
-  #log.ok{color:#7ac97a;border-color:#1a3a1a}
-  .progress-wrap{height:2px;background:var(--border);border-radius:2px;overflow:hidden}
-  #progress-bar{height:100%;width:0%;background:var(--gold);transition:width 0.25s}
-  .preview-wrap{display:flex;flex-direction:column;gap:14px}
-  .preview-header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:10px}
-  .preview-title{font-family:'Cinzel',serif;font-size:0.62rem;letter-spacing:0.15em;color:var(--text-dim);text-transform:uppercase}
-  #preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;min-height:180px}
-  .card-thumb{position:relative;border-radius:7px;overflow:hidden;aspect-ratio:63/88;background:var(--surface);border:1px solid var(--border);cursor:pointer;transition:transform 0.15s,border-color 0.15s,box-shadow 0.15s}
-  .card-thumb:hover{transform:scale(1.04);border-color:var(--gold-dim);box-shadow:0 4px 20px rgba(0,0,0,0.5)}
-  .card-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-  .card-edit-btn{position:absolute;bottom:5px;left:5px;background:rgba(0,0,0,0.8);color:var(--text-dim);font-size:0.6rem;border-radius:4px;padding:2px 6px;border:1px solid var(--border);line-height:1.4;opacity:0;transition:opacity 0.15s}
-  .card-thumb:hover .card-edit-btn{opacity:1}
-  .card-lang-badge{position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.75);color:var(--text-dim);font-size:0.58rem;border-radius:3px;padding:1px 5px;border:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em}
-  .card-dfc-badge{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);background:rgba(40,0,80,0.92);color:#cc99ff;font-size:0.68rem;font-weight:700;border-radius:4px;padding:2px 9px;border:1px solid #9955dd;line-height:1.5;pointer-events:none;white-space:nowrap;z-index:3}
-  .card-error-thumb{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center;font-size:0.62rem;color:var(--error);line-height:1.5;gap:4px}
-  .card-error-thumb span{color:var(--text-dim);font-size:0.58rem}
-  .empty-state{grid-column:1/-1;display:flex;align-items:center;justify-content:center;height:200px;color:var(--text-dim);font-style:italic;font-size:0.9rem;border:1px dashed var(--border);border-radius:var(--radius)}
-  .ornament{text-align:center;color:var(--gold-dim);font-size:0.8rem;letter-spacing:0.5em;user-select:none}
-  /* botón quitar carta */
-  .card-remove-btn{position:absolute;top:5px;left:5px;background:rgba(120,20,20,0.85);color:#ffaaaa;font-size:0.75rem;font-weight:700;border-radius:4px;padding:1px 7px;border:1px solid #a03030;line-height:1.5;opacity:0;transition:opacity 0.15s;cursor:pointer;z-index:2}
-  .card-thumb:hover .card-remove-btn{opacity:1}
-  /* badge cantidad clickable */
-  .card-badge{position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.8);color:var(--gold);font-family:'Cinzel',serif;font-size:0.68rem;font-weight:700;border-radius:4px;padding:2px 6px;border:1px solid var(--gold-dim);line-height:1.4;cursor:pointer;z-index:2}
-  .card-badge:hover{background:rgba(60,45,0,0.95);border-color:var(--gold)}
-  /* input edición cantidad */
-  .qty-input{position:absolute;top:5px;right:5px;width:46px;background:#1a1500;color:var(--gold);font-family:'Cinzel',serif;font-size:0.8rem;font-weight:700;border:1px solid var(--gold);border-radius:4px;padding:1px 5px;text-align:center;outline:none;z-index:3}
-  /* drag & drop */
-  .card-thumb.dragging{opacity:0.35;border-style:dashed;border-color:var(--gold-dim)}
-  .card-thumb.drag-over{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold);transform:scale(1.05)}
-  .hint{font-size:0.72rem;color:var(--text-dim);font-style:italic;line-height:1.5}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MTG Proxy Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0d0f0a;
+            --surface: #141810;
+            --surface2: #1a1f15;
+            --border: #2e3828;
+            --gold: #c9a84c;
+            --gold-dim: #8a6e2f;
+            --green: #3a5c2e;
+            --green-hi: #4f7a3f;
+            --text: #d9cfc0;
+            --text-dim: #7a7060;
+            --error: #c0392b;
+            --radius: 6px;
+        }
 
-  /* MODAL */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.2s}
-  .modal-overlay.open{opacity:1;pointer-events:all}
-  .modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:min(1200px,100%);max-height:92vh;display:flex;flex-direction:column;transform:translateY(12px) scale(0.98);transition:transform 0.2s;overflow:hidden}
-  .modal-overlay.open .modal{transform:none}
-  .modal-header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-shrink:0}
-  .modal-title{font-family:'Cinzel',serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--gold);text-transform:uppercase}
-  .modal-card-name{font-family:'Crimson Pro',serif;font-size:1.1rem;color:var(--text);font-style:italic;font-weight:300;margin-top:2px}
-  .modal-controls{padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface2)}
-  .modal-controls label{font-family:'Cinzel',serif;font-size:0.62rem;letter-spacing:0.15em;color:var(--gold-dim);text-transform:uppercase;white-space:nowrap}
-  .modal-lang-select{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'Crimson Pro',serif;font-size:0.88rem;padding:7px 30px 7px 10px;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a6e2f'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
-  .modal-lang-select:focus{border-color:var(--gold-dim)}
-  .modal-count{margin-left:auto;font-size:0.72rem;color:var(--text-dim);font-style:italic}
-  .modal-body{padding:20px 24px;overflow-y:auto;flex:1}
-  .prints-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
-  .print-card{border-radius:8px;border:2px solid var(--border);overflow:hidden;cursor:pointer;transition:border-color 0.15s,transform 0.15s,box-shadow 0.15s;background:var(--surface2)}
-  .print-card:hover{border-color:var(--gold-dim);transform:scale(1.03);box-shadow:0 6px 24px rgba(0,0,0,0.6)}
-  .print-card.selected{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
-  .print-card img{width:100%;display:block;aspect-ratio:63/88;object-fit:cover}
-  .print-meta{padding:9px 11px;line-height:1.5}
-  .print-meta .set-name{font-size:0.78rem;color:var(--text);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .print-meta .set-detail{font-size:0.68rem;color:var(--text-dim);display:block;margin-top:2px}
-  .print-card.selected .set-name{color:var(--gold)}
-  .prints-loading{grid-column:1/-1;display:flex;align-items:center;justify-content:center;height:180px;color:var(--text-dim);font-style:italic;gap:10px}
-  .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .no-prints{grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--text-dim);font-style:italic;font-size:0.88rem;line-height:1.8}
-  .modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;background:var(--surface2)}
-  footer{border-top:1px solid var(--border);padding:12px 32px;text-align:center;font-size:0.7rem;color:var(--text-dim);font-style:italic}
-  footer a{color:var(--gold-dim);text-decoration:none}
-  @media(max-width:768px){main{grid-template-columns:1fr;padding:16px}h1{font-size:1.2rem}.modal{max-height:95vh}.prints-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
-</style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Crimson Pro',Georgia,serif;
+            font-size: 16px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 22px 32px 18px;
+            display: flex;
+            align-items: flex-end;
+            gap: 16px;
+            background: linear-gradient(180deg,#0a0d08 0%,var(--bg) 100%)
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--gold);
+            clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+            flex-shrink: 0
+        }
+
+        h1 {
+            font-family: 'Cinzel',serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: var(--gold);
+            line-height: 1
+        }
+
+            h1 span {
+                color: var(--text-dim);
+                font-weight: 400;
+                font-size: 0.75rem;
+                display: block;
+                margin-top: 4px;
+                letter-spacing: 0.2em;
+                font-family: 'Crimson Pro',serif;
+                font-style: italic
+            }
+
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 32px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 28px 32px
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px
+        }
+
+        .field-label {
+            font-family: 'Cinzel',serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.18em;
+            color: var(--gold-dim);
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 7px
+        }
+
+        textarea {
+            width: 100%;
+            height: 240px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: 'Courier New',monospace;
+            font-size: 0.8rem;
+            line-height: 1.7;
+            padding: 12px;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s
+        }
+
+            textarea:focus {
+                border-color: var(--gold-dim)
+            }
+
+            textarea::placeholder {
+                color: var(--text-dim)
+            }
+
+        select {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: 'Crimson Pro',serif;
+            font-size: 0.9rem;
+            padding: 9px 32px 9px 12px;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a6e2f'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center
+        }
+
+            select:focus {
+                border-color: var(--gold-dim)
+            }
+
+            select option {
+                background: #1a1f15
+            }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: 'Cinzel',serif;
+            font-size: 0.72rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 11px 24px;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            transition: all 0.18s;
+            width: 100%
+        }
+
+        .btn-primary {
+            background: var(--green);
+            color: #d4efcc;
+            border: 1px solid var(--green-hi)
+        }
+
+            .btn-primary:hover:not(:disabled) {
+                background: var(--green-hi)
+            }
+
+            .btn-primary:disabled {
+                opacity: 0.4;
+                cursor: not-allowed
+            }
+
+        .btn-gold {
+            background: var(--gold);
+            color: #1a1500;
+            border: 1px solid #e0be6a;
+            font-weight: 600
+        }
+
+            .btn-gold:hover:not(:disabled) {
+                background: #dbb85a
+            }
+
+            .btn-gold:disabled {
+                opacity: 0.3;
+                cursor: not-allowed
+            }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+            width: auto;
+            padding: 7px 16px;
+            font-size: 0.65rem
+        }
+
+            .btn-ghost:hover {
+                border-color: var(--gold-dim);
+                color: var(--gold-dim)
+            }
+
+        .stats {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            text-align: center
+        }
+
+        .stat-val {
+            font-family: 'Cinzel',serif;
+            font-size: 1.3rem;
+            color: var(--gold);
+            font-weight: 700;
+            line-height: 1
+        }
+
+        .stat-lbl {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 3px
+        }
+
+        #log {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px 13px;
+            font-size: 0.76rem;
+            color: var(--text-dim);
+            font-style: italic;
+            min-height: 40px;
+            line-height: 1.5
+        }
+
+            #log.error {
+                color: var(--error);
+                border-color: #5a1a1a
+            }
+
+            #log.ok {
+                color: #7ac97a;
+                border-color: #1a3a1a
+            }
+
+        .progress-wrap {
+            height: 2px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--gold);
+            transition: width 0.25s
+        }
+
+        .preview-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 14px
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px
+        }
+
+        .preview-title {
+            font-family: 'Cinzel',serif;
+            font-size: 0.62rem;
+            letter-spacing: 0.15em;
+            color: var(--text-dim);
+            text-transform: uppercase
+        }
+
+        #preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
+            gap: 10px;
+            min-height: 180px
+        }
+
+        .card-thumb {
+            position: relative;
+            border-radius: 7px;
+            overflow: hidden;
+            aspect-ratio: 63/88;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: transform 0.15s,border-color 0.15s,box-shadow 0.15s
+        }
+
+            .card-thumb:hover {
+                transform: scale(1.04);
+                border-color: var(--gold-dim);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.5)
+            }
+
+            .card-thumb img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block
+            }
+
+        .card-edit-btn {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: rgba(0,0,0,0.8);
+            color: var(--text-dim);
+            font-size: 0.6rem;
+            border-radius: 4px;
+            padding: 2px 6px;
+            border: 1px solid var(--border);
+            line-height: 1.4;
+            opacity: 0;
+            transition: opacity 0.15s
+        }
+
+        .card-thumb:hover .card-edit-btn {
+            opacity: 1
+        }
+
+        .card-lang-badge {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.75);
+            color: var(--text-dim);
+            font-size: 0.58rem;
+            border-radius: 3px;
+            padding: 1px 5px;
+            border: 1px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 0.05em
+        }
+
+        .card-dfc-badge {
+            position: absolute;
+            bottom: 26px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(40,0,80,0.92);
+            color: #cc99ff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            border-radius: 4px;
+            padding: 2px 9px;
+            border: 1px solid #9955dd;
+            line-height: 1.5;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 3
+        }
+
+        .card-error-thumb {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            text-align: center;
+            font-size: 0.62rem;
+            color: var(--error);
+            line-height: 1.5;
+            gap: 4px
+        }
+
+            .card-error-thumb span {
+                color: var(--text-dim);
+                font-size: 0.58rem
+            }
+
+        .empty-state {
+            grid-column: 1/-1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--text-dim);
+            font-style: italic;
+            font-size: 0.9rem;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius)
+        }
+
+        .ornament {
+            text-align: center;
+            color: var(--gold-dim);
+            font-size: 0.8rem;
+            letter-spacing: 0.5em;
+            user-select: none
+        }
+
+        .card-remove-btn {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(120,20,20,0.85);
+            color: #ffaaaa;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 4px;
+            padding: 1px 7px;
+            border: 1px solid #a03030;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.15s;
+            cursor: pointer;
+            z-index: 2
+        }
+
+        .card-thumb:hover .card-remove-btn {
+            opacity: 1
+        }
+
+        .card-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.8);
+            color: var(--gold);
+            font-family: 'Cinzel',serif;
+            font-size: 0.68rem;
+            font-weight: 700;
+            border-radius: 4px;
+            padding: 2px 6px;
+            border: 1px solid var(--gold-dim);
+            line-height: 1.4;
+            cursor: pointer;
+            z-index: 2
+        }
+
+            .card-badge:hover {
+                background: rgba(60,45,0,0.95);
+                border-color: var(--gold)
+            }
+
+        .qty-input {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 46px;
+            background: #1a1500;
+            color: var(--gold);
+            font-family: 'Cinzel',serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border: 1px solid var(--gold);
+            border-radius: 4px;
+            padding: 1px 5px;
+            text-align: center;
+            outline: none;
+            z-index: 3
+        }
+
+        .card-thumb.dragging {
+            opacity: 0.35;
+            border-style: dashed;
+            border-color: var(--gold-dim)
+        }
+
+        .card-thumb.drag-over {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 2px var(--gold);
+            transform: scale(1.05)
+        }
+
+        .hint {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            font-style: italic;
+            line-height: 1.5
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.88);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s
+        }
+
+            .modal-overlay.open {
+                opacity: 1;
+                pointer-events: all
+            }
+
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            width: min(1200px,100%);
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(12px) scale(0.98);
+            transition: transform 0.2s;
+            overflow: hidden
+        }
+
+        .modal-overlay.open .modal {
+            transform: none
+        }
+
+        .modal-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-shrink: 0
+        }
+
+        .modal-title {
+            font-family: 'Cinzel',serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.12em;
+            color: var(--gold);
+            text-transform: uppercase
+        }
+
+        .modal-card-name {
+            font-family: 'Crimson Pro',serif;
+            font-size: 1.1rem;
+            color: var(--text);
+            font-style: italic;
+            font-weight: 300;
+            margin-top: 2px
+        }
+
+        .modal-controls {
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            background: var(--surface2)
+        }
+
+            .modal-controls label {
+                font-family: 'Cinzel',serif;
+                font-size: 0.62rem;
+                letter-spacing: 0.15em;
+                color: var(--gold-dim);
+                text-transform: uppercase;
+                white-space: nowrap
+            }
+
+        .modal-lang-select {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: 'Crimson Pro',serif;
+            font-size: 0.88rem;
+            padding: 7px 30px 7px 10px;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a6e2f'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center
+        }
+
+            .modal-lang-select:focus {
+                border-color: var(--gold-dim)
+            }
+
+        .modal-count {
+            margin-left: auto;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            font-style: italic
+        }
+
+        .modal-body {
+            padding: 20px 24px;
+            overflow-y: auto;
+            flex: 1
+        }
+
+        .prints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
+            gap: 16px
+        }
+
+        .print-card {
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.15s,transform 0.15s,box-shadow 0.15s;
+            background: var(--surface2)
+        }
+
+            .print-card:hover {
+                border-color: var(--gold-dim);
+                transform: scale(1.03);
+                box-shadow: 0 6px 24px rgba(0,0,0,0.6)
+            }
+
+            .print-card.selected {
+                border-color: var(--gold);
+                box-shadow: 0 0 0 1px var(--gold)
+            }
+
+            .print-card img {
+                width: 100%;
+                display: block;
+                aspect-ratio: 63/88;
+                object-fit: cover
+            }
+
+        .print-meta {
+            padding: 9px 11px;
+            line-height: 1.5
+        }
+
+            .print-meta .set-name {
+                font-size: 0.78rem;
+                color: var(--text);
+                display: block;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis
+            }
+
+            .print-meta .set-detail {
+                font-size: 0.68rem;
+                color: var(--text-dim);
+                display: block;
+                margin-top: 2px
+            }
+
+        .print-card.selected .set-name {
+            color: var(--gold)
+        }
+
+        .prints-loading {
+            grid-column: 1/-1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 180px;
+            color: var(--text-dim);
+            font-style: italic;
+            gap: 10px
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .no-prints {
+            grid-column: 1/-1;
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-dim);
+            font-style: italic;
+            font-size: 0.88rem;
+            line-height: 1.8
+        }
+
+        .modal-footer {
+            padding: 14px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-shrink: 0;
+            background: var(--surface2)
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 12px 32px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-style: italic
+        }
+
+            footer a {
+                color: var(--gold-dim);
+                text-decoration: none
+            }
+
+        @media(max-width:768px) {
+            main {
+                grid-template-columns: 1fr;
+                padding: 16px
+            }
+
+            h1 {
+                font-size: 1.2rem
+            }
+
+            .modal {
+                max-height: 95vh
+            }
+
+            .prints-grid {
+                grid-template-columns: repeat(auto-fill,minmax(140px,1fr))
+            }
+        }
+    </style>
 </head>
 <body>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="art-modal" onclick="closeModalOnOverlay(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title">Seleccionar arte</div>
-        <div class="modal-card-name" id="modal-card-name">—</div>
-      </div>
-      <button class="btn btn-ghost" onclick="closeModal()">✕ Cerrar</button>
-    </div>
-    <div class="modal-controls">
-      <label for="modal-lang">Idioma de esta carta:</label>
-      <select class="modal-lang-select" id="modal-lang" onchange="onModalLangChange()">
-        <option value="en">🇬🇧 English</option>
-        <option value="es">🇪🇸 Español</option>
-        <option value="fr">🇫🇷 Français</option>
-        <option value="de">🇩🇪 Deutsch</option>
-        <option value="it">🇮🇹 Italiano</option>
-        <option value="pt">🇧🇷 Português</option>
-        <option value="ja">🇯🇵 日本語</option>
-        <option value="ko">🇰🇷 한국어</option>
-        <option value="ru">🇷🇺 Русский</option>
-        <option value="zhs">🇨🇳 中文简体</option>
-        <option value="zht">🇹🇼 中文繁體</option>
-        <option value="ph">☣ Phyrexian</option>
-      </select>
-      <div class="modal-count" id="modal-print-count"></div>
-    </div>
-    <div class="modal-body">
-      <div class="prints-grid" id="prints-grid">
-        <div class="prints-loading"><div class="spinner"></div> Cargando…</div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-gold" id="btn-apply" onclick="applySelection()" style="width:auto;padding:9px 28px" disabled>✓ Usar esta impresión</button>
-    </div>
-  </div>
-</div>
-
-<!-- APP -->
-<header>
-  <div class="logo-icon"></div>
-  <div><h1>MTG PROXY <span>generador de PDFs para imprimir</span></h1></div>
-</header>
-
-<main>
-  <div class="panel">
-    <div>
-      <label class="field-label">Lista del mazo (formato Arena)</label>
-      <textarea id="deck-input" placeholder="4 Lightning Bolt&#10;4 Monastery Swiftspear&#10;4 Goblin Guide&#10;4 Eidolon of the Great Revel&#10;..."></textarea>
+    <div class="modal-overlay" id="art-modal" onclick="closeModalOnOverlay(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title">Seleccionar arte</div>
+                    <div class="modal-card-name" id="modal-card-name">—</div>
+                </div>
+                <button class="btn btn-ghost" onclick="closeModal()">✕ Cerrar</button>
+            </div>
+            <div class="modal-controls">
+                <label for="modal-lang">Idioma de esta carta:</label>
+                <select class="modal-lang-select" id="modal-lang" onchange="onModalLangChange()">
+                    <option value="en">🇬🇧 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="it">🇮🇹 Italiano</option>
+                    <option value="pt">🇧🇷 Português</option>
+                    <option value="ja">🇯🇵 日本語</option>
+                    <option value="ko">🇰🇷 한국어</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="zhs">🇨🇳 中文简体</option>
+                    <option value="zht">🇹🇼 中文繁體</option>
+                    <option value="ph">☣ Phyrexian</option>
+                </select>
+                <div class="modal-count" id="modal-print-count"></div>
+            </div>
+            <div class="modal-body">
+                <div class="prints-grid" id="prints-grid">
+                    <div class="prints-loading"><div class="spinner"></div> Cargando…</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-gold" id="btn-apply" onclick="applySelection()" style="width:auto;padding:9px 28px" disabled>✓ Usar esta impresión</button>
+            </div>
+        </div>
     </div>
 
-    <div>
-      <label class="field-label" for="global-lang">Idioma global</label>
-      <select id="global-lang">
-        <option value="en">🇬🇧 English (por defecto)</option>
-        <option value="es">🇪🇸 Español</option>
-        <option value="fr">🇫🇷 Français</option>
-        <option value="de">🇩🇪 Deutsch</option>
-        <option value="it">🇮🇹 Italiano</option>
-        <option value="pt">🇧🇷 Português</option>
-        <option value="ja">🇯🇵 日本語</option>
-        <option value="ko">🇰🇷 한국어</option>
-        <option value="ru">🇷🇺 Русский</option>
-        <option value="zhs">🇨🇳 中文简体</option>
-        <option value="zht">🇹🇼 中文繁體</option>
-        <option value="ph">☣ Phyrexian</option>
-      </select>
-      <div class="hint" style="margin-top:6px">Si no hay traducción disponible, usa inglés automáticamente. Haz clic en cualquier carta del preview para cambiar su arte o idioma individualmente.</div>
-    </div>
+    <header>
+        <div class="logo-icon"></div>
+        <div><h1>MTG PROXY <span>generador de PDFs para imprimir</span></h1></div>
+    </header>
 
-    <div class="ornament">✦ ✦ ✦</div>
+    <main>
+        <div class="panel">
+            <div>
+                <label class="field-label">Lista del mazo (formato Arena)</label>
+                <textarea id="deck-input" placeholder="4 Lightning Bolt&#10;4 Monastery Swiftspear&#10;4 Goblin Guide&#10;4 Eidolon of the Great Revel&#10;..."></textarea>
+            </div>
 
-    <div class="stats">
-      <div><div class="stat-val" id="stat-unique">0</div><div class="stat-lbl">Únicas</div></div>
-      <div><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
-      <div><div class="stat-val" id="stat-pages">0</div><div class="stat-lbl">Páginas</div></div>
-    </div>
+            <div>
+                <label class="field-label" for="global-lang">Idioma global</label>
+                <select id="global-lang">
+                    <option value="en">🇬🇧 English (por defecto)</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="it">🇮🇹 Italiano</option>
+                    <option value="pt">🇧🇷 Português</option>
+                    <option value="ja">🇯🇵 日本語</option>
+                    <option value="ko">🇰🇷 한국어</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="zhs">🇨🇳 中文简体</option>
+                    <option value="zht">🇹🇼 中文繁體</option>
+                    <option value="ph">☣ Phyrexian</option>
+                </select>
+                <div class="hint" style="margin-top:6px">Si no hay traducción disponible, usa inglés automáticamente. Haz clic en cualquier carta del preview para cambiar su arte o idioma individualmente.</div>
+            </div>
 
-    <div class="progress-wrap"><div id="progress-bar"></div></div>
-    <div id="log">Pega una lista y pulsa "Cargar cartas".</div>
+            <div class="ornament">✦ ✦ ✦</div>
 
-    <button class="btn btn-primary" id="btn-load" onclick="loadDeck()">⬡ &nbsp;Cargar cartas</button>
-    <button class="btn btn-gold" id="btn-pdf" onclick="generatePDF()" disabled>↓ &nbsp;Descargar PDF</button>
-  </div>
+            <div class="stats">
+                <div><div class="stat-val" id="stat-unique">0</div><div class="stat-lbl">Únicas</div></div>
+                <div><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
+                <div><div class="stat-val" id="stat-pages">0</div><div class="stat-lbl">Páginas</div></div>
+            </div>
 
-  <div class="preview-wrap">
-    <div class="preview-header">
-      <span class="preview-title">Vista previa · clic en carta para cambiar arte / idioma</span>
-      <span class="preview-title" id="preview-count" style="color:var(--gold)"></span>
-    </div>
-    <div id="preview-grid"><div class="empty-state">Aquí aparecerán las cartas cargadas</div></div>
-  </div>
-</main>
+            <div class="progress-wrap"><div id="progress-bar"></div></div>
+            <div id="log">Pega una lista y pulsa "Cargar cartas".</div>
 
-<footer>Imágenes vía <a href="https://scryfall.com" target="_blank">Scryfall API</a> · Solo para uso personal y educativo</footer>
+            <button class="btn btn-primary" id="btn-load" onclick="loadDeck()">⬡ &nbsp;Cargar cartas</button>
+            <button class="btn btn-gold" id="btn-pdf" onclick="generatePDF()" disabled>↓ &nbsp;Descargar PDF</button>
+        </div>
 
-<script>
-const LANG_NAMES={en:'EN',es:'ES',fr:'FR',de:'DE',it:'IT',pt:'PT',ja:'JA',ko:'KO',ru:'RU',zhs:'ZHS',zht:'ZHT',ph:'PH'};
+        <div class="preview-wrap">
+            <div class="preview-header">
+                <span class="preview-title">Vista previa · clic en carta para cambiar arte / idioma</span>
+                <span class="preview-title" id="preview-count" style="color:var(--gold)"></span>
+            </div>
+            <div id="preview-grid"><div class="empty-state">Aquí aparecerán las cartas cargadas</div></div>
+        </div>
+    </main>
 
-const state={cards:[],loading:false,printsCache:{},abortController:null};
-const modal={cardIndex:-1,selectedPrintId:null,prints:[],currentLang:'en'};
+    <footer>Imágenes vía <a href="https://scryfall.com" target="_blank">Scryfall API</a> · Solo para uso personal y educativo</footer>
 
-function getGlobalLang(){return document.getElementById('global-lang').value}
-function setLog(msg,type=''){const el=document.getElementById('log');el.textContent=msg;el.className=type}
-function setProgress(pct){document.getElementById('progress-bar').style.width=pct+'%'}
+    <script>
+        const LANG_NAMES = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', it: 'IT', pt: 'PT', ja: 'JA', ko: 'KO', ru: 'RU', zhs: 'ZHS', zht: 'ZHT', ph: 'PH' };
+        const imageBlobCache = new Map();
+        const state = { cards: [], loading: false, printsCache: {}, abortController: null, langCache: {} };
+        const modal = { cardIndex: -1, selectedPrintId: null, prints: [], currentLang: 'en' };
 
-function updateStats(cards){
-  const unique=cards.length;
-  const total=cards.reduce((s,c)=>s+(c.qty||0),0);
-  const pages=total?Math.ceil(total/9):0;
-  document.getElementById('stat-unique').textContent=unique;
-  document.getElementById('stat-total').textContent=total;
-  document.getElementById('stat-pages').textContent=pages;
-  document.getElementById('preview-count').textContent=total>0?`${total} carta${total!==1?'s':''} · ${pages} pág.`:'';
-}
+        function getGlobalLang() { return document.getElementById('global-lang').value }
+        function setLog(msg, type = '') { const el = document.getElementById('log'); el.textContent = msg; el.className = type }
+        function setProgress(pct) { document.getElementById('progress-bar').style.width = pct + '%' }
 
-// Normaliza nombres para comparación: gestiona comillas tipográficas,
-// guiones unicode, tildes y variaciones de espaciado que causan fallos de lookup.
-function normalizeCardName(name){
-  return String(name)
-    .normalize('NFKD')
-    .replace(/[''`´]/g,"'")
-    .replace(/[\u2010-\u2015\u2212]/g,"-")
-    .replace(/\s*\/\/\s*/g," // ")
-    .replace(/\s+/g," ")
-    .trim()
-    .toLowerCase();
-}
-
-function parseArena(text){
-  const result=[];
-  for(const raw of text.split('\n')){
-    let line=raw.trim();
-    if(!line||/^(Deck|Sideboard|Commander|Companion|About)$/i.test(line))continue;
-    // Eliminar set code y collector number: "Lightning Bolt (M21) 107" → "Lightning Bolt"
-    line=line.replace(/\s+\([A-Z0-9]+\)\s*\d*$/i,'').trim();
-    // Con cantidad: "4 Sol Ring" o "4x Sol Ring"
-    const m=line.match(/^(\d+)[xX]?\s+(.+?)\s*$/);
-    let qty,name;
-    if(m){
-      qty=parseInt(m[1],10);
-      name=m[2].trim();
-    } else if(line.length>1){
-      // Sin cantidad → qty implícito 1
-      qty=1;
-      name=line;
-    } else continue;
-    // Cartas doble cara: normalizar " / " y " // " → tomar solo la primera cara
-    // Scryfall encuentra la carta completa por el nombre de la primera cara
-    name=name.replace(/\s+\/\/\s+/g,' // ').replace(/\s+\/\s+/g,' // ');
-    name=name.split(' // ')[0].trim();
-    if(qty>0&&name)result.push({qty,name});
-  }
-  return result;
-}
-
-// ── image_status: "highres_scan"|"lowres" = válida · "placeholder"|"missing" = sin scan ──
-function hasValidImage(card){
-  if(!card)return false;
-  const s=card.image_status;
-  if(s==='placeholder'||s==='missing')return false;
-  return !!extractImageUrl(card);
-}
-
-// ── Batch: hasta 75 cartas en 1 sola request POST ──────────────────────────
-async function fetchCollectionBatch(names){
-  const cleaned=names.map(n=>String(n).trim()).filter(Boolean);
-  const body=JSON.stringify({identifiers:cleaned.map(name=>({name}))});
-  const res=await fetchWithRetry('https://api.scryfall.com/cards/collection',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body
-  });
-  if(!res||!res.ok)throw new Error('Error en batch collection ('+( res?res.status:'sin respuesta')+')');
-  const data=await res.json();
-  const map=new Map();
-  for(const card of(data.data||[])){
-    const fullKey=normalizeCardName(card.name);
-    map.set(fullKey,card);
-    // Para cartas doble cara ("A // B"), guardar también solo la primera cara ("A")
-    // porque parseArena busca por primera cara pero Scryfall devuelve el nombre completo
-    if(card.name.includes(' // ')){
-      const firstFaceKey=normalizeCardName(card.name.split(' // ')[0].trim());
-      map.set(firstFaceKey,card);
-    }
-  }
-  // Rescue fuzzy para not_found: cartas con nombres raros que el batch no matchea exacto
-  for(const nf of(data.not_found||[])){
-    if(!nf.name)continue;
-    try{
-      await new Promise(r=>setTimeout(r,100)); // pequeña pausa entre rescues
-      const rRes=await fetchWithRetry('https://api.scryfall.com/cards/named?fuzzy='+encodeURIComponent(nf.name));
-      if(rRes&&rRes.ok){
-        const rCard=await rRes.json();
-        map.set(normalizeCardName(nf.name),rCard);
-        map.set(normalizeCardName(rCard.name),rCard);
-        // Si es doble cara, guardar también por primera cara
-        if(rCard.name.includes(' // ')){
-          map.set(normalizeCardName(rCard.name.split(' // ')[0].trim()),rCard);
+        function updateStats(cards) {
+            const unique = cards.length;
+            const total = cards.reduce((s, c) => s + (c.qty || 0), 0);
+            const pages = total ? Math.ceil(total / 9) : 0;
+            document.getElementById('stat-unique').textContent = unique;
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-pages').textContent = pages;
+            document.getElementById('preview-count').textContent = total > 0 ? `${total} carta${total !== 1 ? 's' : ''} · ${pages} pág.` : '';
         }
-      }
-    }catch(e){ /* rescue silencioso */ }
-  }
-  return {map};
-}
 
-// ── Fetch en idioma para una carta concreta (solo si hace falta) ────────────
-async function fetchCardLang(name,lang,signal){
-  const q='!"'+name+'" lang:'+lang;
-  const url='https://api.scryfall.com/cards/search?q='+encodeURIComponent(q)+'&unique=prints&order=released&dir=desc';
-  const opts=signal?{signal}:{};
-  const res=await fetchWithRetry(url,opts);
-  if(!res||!res.ok)return null;
-  const data=await res.json();
-  if(!data.data?.length)return null;
-  const exact=data.data.find(c=>normalizeCardName(c.name)===normalizeCardName(name)&&hasValidImage(c));
-  const first=data.data.find(c=>hasValidImage(c));
-  return exact||first||null;
-}
+        function normalizeCardName(name) {
+            return String(name)
+                .normalize('NFKD')
+                .replace(/[''`´]/g, "'")
+                .replace(/[\u2010-\u2015\u2212]/g, "-")
+                .replace(/\s*\/\/\s*/g, " // ")
+                .replace(/\s+/g, " ")
+                .trim()
+                .toLowerCase();
+        }
 
-function extractImageUrl(data){
-  if(data.image_uris?.normal)return data.image_uris.normal;
-  if(data.card_faces?.[0]?.image_uris?.normal)return data.card_faces[0].image_uris.normal;
-  return null;
-}
-function extractFace2Url(data){
-  // Solo devuelve URL si es DFC con imágenes separadas por cara
-  if(data.card_faces?.length>=2&&data.card_faces[1]?.image_uris?.normal)
-    return data.card_faces[1].image_uris.normal;
-  return null;
-}
-function extractFace2Name(data){
-  if(data.card_faces?.length>=2)return data.card_faces[1].name||null;
-  return null;
-}
+        function parseArena(text) {
+            const result = [];
+            for (const raw of text.split('\n')) {
+                let line = raw.trim();
+                if (!line || /^(Deck|Sideboard|Commander|Companion|About)$/i.test(line)) continue;
+                line = line.replace(/\s+\([A-Z0-9]+\)\s*\d*$/i, '').trim();
+                const m = line.match(/^(\d+)[xX]?\s+(.+?)\s*$/);
+                let qty, name;
+                if (m) {
+                    qty = parseInt(m[1], 10);
+                    name = m[2].trim();
+                } else if (line.length > 1) {
+                    qty = 1;
+                    name = line;
+                } else continue;
+                name = name.replace(/\s+\/\/\s+/g, ' // ').replace(/\s+\/\s+/g, ' // ');
+                name = name.split(' // ')[0].trim();
+                if (qty > 0 && name) result.push({ qty, name });
+            }
+            return result;
+        }
 
-async function fetchPrints(name,lang='en'){
-  const key=`${name}|${lang}`;
-  if(state.printsCache[key])return state.printsCache[key];
-  const langFilter=lang!=='en'?` lang:${lang}`:'';
-  const q=`!"${name}"${langFilter}`;
-  const url=`https://api.scryfall.com/cards/search?q=${encodeURIComponent(q)}&unique=prints&order=released&dir=asc`;
-  const res=await fetchWithRetry(url);
-  let prints=[];
-  if(res&&res.ok){
-    const data=await res.json();
-    prints=(data.data||[]).map(c=>({
-      id:c.id,
-      imageUrl:extractImageUrl(c),
-      imageUrl2:extractFace2Url(c),       // cara 2 de esta impresión concreta
-      face2Name:extractFace2Name(c),
-      setName:c.set_name,
-      setCode:c.set.toUpperCase(),
-      year:c.released_at?c.released_at.slice(0,4):'—',
-      artist:c.artist||'—',
-      lang:c.lang,
-      cardName:c.printed_name||c.name
-    })).filter(p=>p.imageUrl);
-  }
-  if(prints.length===0&&lang!=='en')return fetchPrints(name,'en');
-  state.printsCache[key]=prints;
-  return prints;
-}
+        function hasValidImage(card) {
+            if (!card) return false;
+            const s = card.image_status;
+            if (s === 'placeholder' || s === 'missing') return false;
+            return !!extractImageUrl(card);
+        }
 
-// Conversión imagen → base64 via canvas con cache-busting.
-// El cache-busting (_cb=timestamp) fuerza una request nueva con CORS headers correctos,
-// evitando el "tainted canvas" cuando el browser ya cacheó la imagen sin CORS.
-// La concurrencia limitada en convTasks impide que el hilo principal se congele.
-function imageUrlToBase64(url){
-  const freshUrl=url+(url.includes('?')?'&':'?')+'_cb='+Date.now();
-  return new Promise((resolve,reject)=>{
-    const img=new Image();
-    img.crossOrigin='anonymous';
-    img.onload=()=>{
-      try{
-        const c=document.createElement('canvas');
-        c.width=img.naturalWidth||672;
-        c.height=img.naturalHeight||936;
-        c.getContext('2d').drawImage(img,0,0);
-        resolve(c.toDataURL('image/jpeg',0.85));
-      }catch(e){reject(new Error('Canvas error: '+e.message))}
-    };
-    img.onerror=()=>reject(new Error('No se pudo cargar: '+url.slice(0,60)));
-    // Timeout de seguridad: si la imagen no carga en 20s, rechazar
-    const t=setTimeout(()=>{img.src='';reject(new Error('Timeout cargando imagen'));},20000);
-    img.onload=function(){
-      clearTimeout(t);
-      try{
-        const c=document.createElement('canvas');
-        c.width=img.naturalWidth||672;
-        c.height=img.naturalHeight||936;
-        c.getContext('2d').drawImage(img,0,0);
-        resolve(c.toDataURL('image/jpeg',0.85));
-      }catch(e){reject(new Error('Canvas error: '+e.message))}
-    };
-    img.src=freshUrl;
-  });
-}
+        async function fetchCollectionBatch(names) {
+            const cleaned = names.map(n => String(n).trim()).filter(Boolean);
+            const body = JSON.stringify({ identifiers: cleaned.map(name => ({ name })) });
+            const res = await fetchWithRetry('https://api.scryfall.com/cards/collection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body
+            });
+            if (!res || !res.ok) throw new Error('Error en batch collection (' + (res ? res.status : 'sin respuesta') + ')');
+            const data = await res.json();
+            const map = new Map();
+            for (const card of (data.data || [])) {
+                const fullKey = normalizeCardName(card.name);
+                map.set(fullKey, card);
+                if (card.name.includes(' // ')) {
+                    const firstFaceKey = normalizeCardName(card.name.split(' // ')[0].trim());
+                    map.set(firstFaceKey, card);
+                }
+            }
+            for (const nf of (data.not_found || [])) {
+                if (!nf.name) continue;
+                try {
+                    await new Promise(r => setTimeout(r, 100));
+                    const rRes = await fetchWithRetry('https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(nf.name));
+                    if (rRes && rRes.ok) {
+                        const rCard = await rRes.json();
+                        map.set(normalizeCardName(nf.name), rCard);
+                        map.set(normalizeCardName(rCard.name), rCard);
+                        if (rCard.name.includes(' // ')) {
+                            map.set(normalizeCardName(rCard.name.split(' // ')[0].trim()), rCard);
+                        }
+                    }
+                } catch (e) { }
+            }
+            return { map };
+        }
 
-function renderPreview(cards){
-  const grid=document.getElementById('preview-grid');
-  grid.innerHTML='';
-  if(!cards.length){grid.innerHTML='<div class="empty-state">Aquí aparecerán las cartas cargadas</div>';return}
+        async function fetchCardLang(name, lang, signal) {
+            const q = '!"' + name + '" lang:' + lang;
+            const url = 'https://api.scryfall.com/cards/search?q=' + encodeURIComponent(q) + '&unique=prints&order=released&dir=desc';
+            const opts = signal ? { signal } : {};
+            const res = await fetchWithRetry(url, opts);
+            if (!res || !res.ok) return null;
+            const data = await res.json();
+            if (!data.data?.length) return null;
+            // Buscar coincidencia exacta primero (nombre normalizado)
+            const normName = normalizeCardName(name);
+            const exact = data.data.find(c =>
+                (normalizeCardName(c.name) === normName ||
+                 normalizeCardName(c.printed_name || '') === normName) &&
+                hasValidImage(c)
+            );
+            if (exact) return exact;
+            // Solo aceptar 'first' si el nombre de la carta coincide razonablemente
+            // (evita que una búsqueda devuelva una carta completamente diferente)
+            const first = data.data.find(c => hasValidImage(c));
+            if (!first) return null;
+            const firstNorm = normalizeCardName(first.name);
+            // Rechazar si el nombre es demasiado diferente (puede ser falso positivo del search)
+            if (!firstNorm.includes(normName.split(' ')[0]) && !normName.includes(firstNorm.split(' ')[0])) {
+                console.warn('fetchCardLang: posible falso positivo para "' + name + '" → "' + first.name + '"');
+                return null;
+            }
+            return first;
+        }
 
-  let dragSrc=null;
+        function extractImageUrl(data, size = 'normal') {
+            if (data.image_uris?.[size]) return data.image_uris[size];
+            if (data.card_faces?.[0]?.image_uris?.[size]) return data.card_faces[0].image_uris[size];
+            return null;
+        }
 
-  cards.forEach((card,i)=>{
-    const div=document.createElement('div');
-    div.className='card-thumb';
-    div.draggable=true;
+        function extractFace2Url(data, size = 'normal') {
+            if (data.card_faces?.length >= 2 && data.card_faces[1]?.image_uris?.[size]) {
+                return data.card_faces[1].image_uris[size];
+            }
+            return null;
+        }
 
-    if(card.error){
-      div.innerHTML=`<div class="card-error-thumb">⚠ ${card.name}<span>${card.error}</span></div>`;
-      // botón eliminar también en error
-      const rm=document.createElement('div');
-      rm.className='card-remove-btn';rm.textContent='✕';
-      rm.addEventListener('click',e=>{e.stopPropagation();removeCard(i);});
-      div.appendChild(rm);
-    }else{
-      const langBadge=card.lang&&card.lang!=='en'
-        ?`<div class="card-lang-badge">${LANG_NAMES[card.lang]||card.lang}</div>`:'';
-      const dfcBadge=card.imageUrl2?`<div class="card-dfc-badge" title="Doble cara: ${card.face2Name||'cara 2'}">⟲ ${card.face2Name?card.face2Name.split(',')[0].trim():'2 caras'}</div>`:'';
-      div.innerHTML=`<img src="${card.imageUrl}" alt="${card.name}" loading="lazy"/>
-        <div class="card-badge" title="Clic para editar cantidad">×${card.qty}</div>
-        <div class="card-edit-btn">✎ arte</div>${langBadge}${dfcBadge}`;
+        function extractFace2Name(data) {
+            if (data.card_faces?.length >= 2) return data.card_faces[1].name || null;
+            return null;
+        }
 
-      // abrir modal al clic en la imagen / fondo (no en los controles)
-      div.addEventListener('click',(e)=>{
-        if(e.target.classList.contains('card-badge'))return;
-        if(e.target.classList.contains('card-remove-btn'))return;
-        if(e.target.classList.contains('qty-input'))return;
-        openModal(i);
-      });
+        async function fetchPrints(name, lang = 'en') {
+            const key = `${name}|${lang}`;
+            if (state.printsCache[key]) return state.printsCache[key];
+            const langFilter = lang !== 'en' ? ` lang:${lang}` : '';
+            const q = `!"${name}"${langFilter}`;
+            const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(q)}&unique=prints&order=released&dir=asc`;
+            const res = await fetchWithRetry(url);
+            let prints = [];
+            if (res && res.ok) {
+                const data = await res.json();
+                prints = (data.data || []).map(c => ({
+                    id: c.id,
+                    imageUrl: extractImageUrl(c, 'small'),
+                    imageUrl2: extractFace2Url(c, 'small'),
+                    pdfImageUrl: extractImageUrl(c, 'normal'),
+                    pdfImageUrl2: extractFace2Url(c, 'normal'),
+                    face2Name: extractFace2Name(c),
+                    setName: c.set_name,
+                    setCode: c.set.toUpperCase(),
+                    year: c.released_at ? c.released_at.slice(0, 4) : '—',
+                    artist: c.artist || '—',
+                    lang: c.lang,
+                    cardName: c.printed_name || c.name
+                })).filter(p => p.imageUrl);
+            }
+            if (prints.length === 0 && lang !== 'en') return fetchPrints(name, 'en');
+            state.printsCache[key] = prints;
+            return prints;
+        }
 
-      // editar cantidad al clic en el badge
-      const badge=div.querySelector('.card-badge');
-      badge.addEventListener('click',e=>{
-        e.stopPropagation();
-        editQty(div,badge,i);
-      });
+        // Cache-busting para evitar que el navegador sirva versión cacheada sin CORS.
+        // Incluye timeout y reintentos para no colgarse si Scryfall tarda.
+        async function fetchImageBlob(url, retries = 3, timeoutMs = 20000) {
+            if (imageBlobCache.has(url)) return imageBlobCache.get(url);
+            const fetchUrl = url + (url.includes('?') ? '&' : '?') + '_cb=' + Date.now();
 
-      // botón eliminar
-      const rm=document.createElement('div');
-      rm.className='card-remove-btn';rm.textContent='✕';
-      rm.addEventListener('click',e=>{e.stopPropagation();removeCard(i);});
-      div.appendChild(rm);
-    }
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+                try {
+                    const res = await fetch(fetchUrl, { signal: ctrl.signal });
+                    clearTimeout(timer);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const blob = await res.blob();
+                    imageBlobCache.set(url, blob);
+                    return blob;
+                } catch (e) {
+                    clearTimeout(timer);
+                    if (attempt === retries) throw new Error('No se pudo descargar imagen tras ' + retries + ' intentos: ' + e.message);
+                    // Espera exponencial antes de reintentar
+                    await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
+                }
+            }
+        }
 
-    // ── Drag & Drop ──
-    div.addEventListener('dragstart',e=>{
-      dragSrc=i;
-      div.classList.add('dragging');
-      e.dataTransfer.effectAllowed='move';
-    });
-    div.addEventListener('dragend',()=>div.classList.remove('dragging'));
-    div.addEventListener('dragover',e=>{
-      e.preventDefault();
-      e.dataTransfer.dropEffect='move';
-      div.classList.add('drag-over');
-    });
-    div.addEventListener('dragleave',()=>div.classList.remove('drag-over'));
-    div.addEventListener('drop',e=>{
-      e.preventDefault();
-      div.classList.remove('drag-over');
-      if(dragSrc===null||dragSrc===i)return;
-      // intercambiar posiciones
-      const tmp=state.cards.splice(dragSrc,1)[0];
-      state.cards.splice(i,0,tmp);
-      updateStats(state.cards.filter(c=>!c.error));
-      renderPreview(state.cards);
-    });
+        function renderPreview(cards) {
+            const grid = document.getElementById('preview-grid');
+            if (!cards.length) {
+                grid.innerHTML = `<div class="empty-state">Aquí aparecerán las cartas cargadas</div>`;
+                return;
+            }
 
-    grid.appendChild(div);
-  });
-}
+            const fragment = document.createDocumentFragment();
+            let dragSrc = null;
 
-function removeCard(i){
-  state.cards.splice(i,1);
-  updateStats(state.cards.filter(c=>!c.error));
-  renderPreview(state.cards);
-  setLog(state.cards.length?'Carta eliminada.':'Lista vacía.', state.cards.length?'':'error');
-}
+            cards.forEach((card, i) => {
+                const div = document.createElement('div');
+                div.className = 'card-thumb';
+                div.draggable = true;
 
-function editQty(thumbEl,badge,i){
-  // Reemplazar badge por un input numérico
-  const input=document.createElement('input');
-  input.type='number';input.min='1';input.max='99';
-  input.value=state.cards[i].qty;
-  input.className='qty-input';
-  badge.replaceWith(input);
-  input.focus();input.select();
+                if (card.error) {
+                    div.innerHTML = `
+                <div class="card-error-thumb">
+                  ⚠ ${card.name}
+                  <span>${card.error}</span>
+                </div>
+              `;
+                    const rm = document.createElement('div');
+                    rm.className = 'card-remove-btn';
+                    rm.textContent = '✕';
+                    rm.addEventListener('click', e => { e.stopPropagation(); removeCard(i); });
+                    div.appendChild(rm);
+                } else {
+                    const langBadge = card.lang && card.lang !== 'en' ? `<div class="card-lang-badge">${LANG_NAMES[card.lang] || card.lang}</div>` : '';
+                    const dfcBadge = card.imageUrl2 ? `<div class="card-dfc-badge" title="Doble cara: ${card.face2Name || 'cara 2'}">⟲ ${card.face2Name ? card.face2Name.split(',')[0].trim() : '2 caras'}</div>` : '';
 
-  const commit=()=>{
-    const v=parseInt(input.value,10);
-    if(v>0)state.cards[i].qty=v;
-    updateStats(state.cards.filter(c=>!c.error));
-    renderPreview(state.cards);
-  };
-  input.addEventListener('blur',commit);
-  input.addEventListener('keydown',e=>{
-    if(e.key==='Enter')input.blur();
-    if(e.key==='Escape'){state.cards[i].qty=state.cards[i].qty;renderPreview(state.cards);}
-  });
-}
+                    div.innerHTML = `
+                <img src="${card.imageUrl}" alt="${card.name}" loading="lazy" decoding="async"/>
+                <div class="card-badge" title="Clic para editar cantidad">×${card.qty}</div>
+                <div class="card-edit-btn">✎ arte</div>
+                ${langBadge}
+                ${dfcBadge}
+              `;
 
-// Fetch con reintentos, backoff exponencial y timeout por request
-async function fetchWithRetry(url, opts={}, retries=3, baseDelay=500, timeoutMs=10000){
-  const externalSignal=opts.signal;
-  for(let attempt=0;attempt<=retries;attempt++){
-    if(externalSignal?.aborted)throw new DOMException('Aborted','AbortError');
-    const timeoutCtrl=new AbortController();
-    const timer=setTimeout(()=>timeoutCtrl.abort(),timeoutMs*(attempt+1));
-    // Listener para abortar el timeout si se cancela externamente
-    const onExtAbort=()=>timeoutCtrl.abort();
-    externalSignal?.addEventListener('abort',onExtAbort,{once:true});
-    try{
-      const res=await fetch(url,{...opts,signal:timeoutCtrl.signal});
-      clearTimeout(timer);
-      externalSignal?.removeEventListener('abort',onExtAbort);
-      if(res.status===429){
-        await new Promise(r=>setTimeout(r,baseDelay*Math.pow(2,attempt)));
-        continue;
-      }
-      return res;
-    }catch(e){
-      clearTimeout(timer);
-      externalSignal?.removeEventListener('abort',onExtAbort);
-      if(externalSignal?.aborted)throw new DOMException('Aborted','AbortError');
-      if(attempt===retries)throw e;
-      await new Promise(r=>setTimeout(r,baseDelay*Math.pow(2,attempt)));
-    }
-  }
-}
+                    div.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('card-badge') || e.target.classList.contains('card-remove-btn') || e.target.classList.contains('qty-input')) return;
+                        openModal(i);
+                    });
 
-// runWithConcurrency: aún usado en generatePDF para convertir imágenes en paralelo
-async function runWithConcurrency(tasks,limit){
-  const results=[];let idx=0;
-  async function worker(){while(idx<tasks.length){const i=idx++;results[i]=await tasks[i]();}}
-  await Promise.all(Array.from({length:Math.min(limit,tasks.length)},worker));
-  return results;
-}
+                    const badge = div.querySelector('.card-badge');
+                    badge.addEventListener('click', e => { e.stopPropagation(); editQty(div, badge, i); });
 
-async function loadDeck(){
-  // Abortar carga anterior
-  if(state.abortController)state.abortController.abort();
-  const controller=new AbortController();
-  state.abortController=controller;
+                    const rm = document.createElement('div');
+                    rm.className = 'card-remove-btn';
+                    rm.textContent = '✕';
+                    rm.addEventListener('click', e => { e.stopPropagation(); removeCard(i); });
+                    div.appendChild(rm);
+                }
 
-  const text=document.getElementById('deck-input').value.trim();
-  const parsed=parseArena(text);
-  if(!parsed.length){setLog('No se detectaron cartas. Revisa el formato (ej: "4 Lightning Bolt").','error');return}
-  const lang=getGlobalLang();
+                div.addEventListener('dragstart', e => { dragSrc = i; div.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+                div.addEventListener('dragend', () => { div.classList.remove('dragging'); });
+                div.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; div.classList.add('drag-over'); });
+                div.addEventListener('dragleave', () => { div.classList.remove('drag-over'); });
+                div.addEventListener('drop', e => {
+                    e.preventDefault();
+                    div.classList.remove('drag-over');
+                    if (dragSrc === null || dragSrc === i) return;
+                    const moved = state.cards.splice(dragSrc, 1)[0];
+                    state.cards.splice(i, 0, moved);
+                    updateStats(state.cards.filter(c => !c.error));
+                    renderPreview(state.cards);
+                });
+                fragment.appendChild(div);
+            });
+            grid.replaceChildren(fragment);
+        }
 
-  state.loading=true;state.cards=[];
-  document.getElementById('btn-load').disabled=true;
-  document.getElementById('btn-pdf').disabled=true;
-  setProgress(0);renderPreview([]);updateStats([]);
+        function removeCard(i) {
+            state.cards.splice(i, 1);
+            updateStats(state.cards.filter(c => !c.error));
+            renderPreview(state.cards);
+            setLog(state.cards.length ? 'Carta eliminada.' : 'Lista vacía.', state.cards.length ? '' : 'error');
+        }
 
-  // ── FASE 1: batch EN (1-2 requests para TODO el mazo) ─────────────────────
-  const uniqueNames=[...new Map(parsed.map(p=>[normalizeCardName(p.name),p.name])).values()];
-  const CHUNK=75; // límite de Scryfall por request
-  const enMap=new Map(); // name_lower → cardData EN
+        function editQty(thumbEl, badge, i) {
+            const input = document.createElement('input');
+            input.type = 'number'; input.min = '1'; input.max = '99';
+            input.value = state.cards[i].qty;
+            input.className = 'qty-input';
+            badge.replaceWith(input);
+            input.focus(); input.select();
 
-  setLog(`Fase 1/2: obteniendo ${uniqueNames.length} cartas en batch…`);
+            const commit = () => {
+                const v = parseInt(input.value, 10);
+                if (v > 0) state.cards[i].qty = v;
+                updateStats(state.cards.filter(c => !c.error));
+                renderPreview(state.cards);
+            };
+            input.addEventListener('blur', commit);
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') input.blur();
+                if (e.key === 'Escape') { state.cards[i].qty = state.cards[i].qty; renderPreview(state.cards); }
+            });
+        }
 
-  try{
-    for(let i=0;i<uniqueNames.length;i+=CHUNK){
-      if(controller.signal.aborted)break;
-      const chunk=uniqueNames.slice(i,i+CHUNK);
-      const {map}=await fetchCollectionBatch(chunk);
-      for(const [k,v] of map)enMap.set(k,v);
-      setProgress(Math.round((Math.min(i+CHUNK,uniqueNames.length))/uniqueNames.length*40));
-    }
-  }catch(e){
-    setLog('Error en la carga batch: '+e.message,'error');
-    state.loading=false;
-    document.getElementById('btn-load').disabled=false;
-    return;
-  }
+        async function fetchWithRetry(url, opts = {}, retries = 3, baseDelay = 500, timeoutMs = 10000) {
+            const externalSignal = opts.signal;
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                if (externalSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
+                const timeoutCtrl = new AbortController();
+                const timer = setTimeout(() => timeoutCtrl.abort(), timeoutMs * (attempt + 1));
+                const onExtAbort = () => timeoutCtrl.abort();
+                externalSignal?.addEventListener('abort', onExtAbort, { once: true });
+                try {
+                    const res = await fetch(url, { ...opts, signal: timeoutCtrl.signal });
+                    clearTimeout(timer);
+                    externalSignal?.removeEventListener('abort', onExtAbort);
+                    if (res.status === 429) {
+                        await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, attempt)));
+                        continue;
+                    }
+                    return res;
+                } catch (e) {
+                    clearTimeout(timer);
+                    externalSignal?.removeEventListener('abort', onExtAbort);
+                    if (externalSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
+                    if (attempt === retries) throw e;
+                    await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, attempt)));
+                }
+            }
+        }
 
-  if(controller.signal.aborted){state.loading=false;return;}
+        async function runWithConcurrency(tasks, limit) {
+            const results = []; let idx = 0;
+            async function worker() { while (idx < tasks.length) { const i = idx++; results[i] = await tasks[i](); } }
+            await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
+            return results;
+        }
 
-  // ── FASE 2: idioma (solo si no es EN) ─────────────────────────────────────
-  // Solo hacemos requests individuales para cartas que SÍ tienen scan en el idioma pedido
-  const langMap=new Map(); // name_lower → cardData en idioma pedido
+        async function loadDeck() {
+            if (state.abortController) state.abortController.abort();
+            const controller = new AbortController();
+            state.abortController = controller;
 
-  if(lang!=='en'){
-    // Buscar todas las versiones en el idioma de golpe con una sola query por nombre
-    // Para no saturar: procesamos una a una pero solo las que no son placeholder
-    const needsLang=uniqueNames.filter(n=>{
-      const en=enMap.get(n.toLowerCase());
-      return en; // solo buscamos traducción de cartas que existen
-    });
+            const text = document.getElementById('deck-input').value.trim();
+            const parsed = parseArena(text);
+            if (!parsed.length) { setLog('No se detectaron cartas. Revisa el formato (ej: "4 Lightning Bolt").', 'error'); return }
+            const lang = getGlobalLang();
 
-    setLog(`Fase 2/2: buscando versiones en ${LANG_NAMES[lang]||lang}…`);
-    let done=0;
-    for(const name of needsLang){
-      if(controller.signal.aborted)break;
-      try{
-        const localCard=await fetchCardLang(name,lang,controller.signal);
-        if(localCard)langMap.set(normalizeCardName(name),localCard);
-      }catch(e){
-        if(controller.signal.aborted)break;
-        console.warn('fetchCardLang error "'+name+'":', e.message);
-      }
-      done++;
-      setProgress(40+Math.round(done/needsLang.length*40));
-      setLog(`Buscando ${LANG_NAMES[lang]||lang}\u2026 ${done}/${needsLang.length}`);
-      if(!controller.signal.aborted)await new Promise(r=>setTimeout(r,100));
-    }
-  }
+            state.loading = true; state.cards = [];
+            document.getElementById('btn-load').disabled = true;
+            document.getElementById('btn-pdf').disabled = true;
+            setProgress(0); renderPreview([]); updateStats([]);
 
-  if(controller.signal.aborted){state.loading=false;return;}
+            const uniqueNames = [...new Map(parsed.map(p => [normalizeCardName(p.name), p.name])).values()];
+            const CHUNK = 75;
+            const enMap = new Map();
 
-  // ── Construir state.cards ──────────────────────────────────────────────────
-  let errors=0;
-  for(const{qty,name}of parsed){
-    const key=normalizeCardName(name);
-    // Preferir versión en idioma pedido → fallback a inglés
-    const data=langMap.get(key)||enMap.get(key);
-    if(!data){
-      errors++;
-      state.cards.push({qty,name,imageUrl:null,lang,printId:null,error:'No encontrada en Scryfall'});
-      continue;
-    }
-    const imageUrl=extractImageUrl(data);
-    if(!imageUrl){
-      errors++;
-      state.cards.push({qty,name,imageUrl:null,lang,printId:null,error:'Sin imagen disponible'});
-      continue;
-    }
-    // Usar nombre oficial de Scryfall para búsquedas posteriores (arte, idioma)
-    const imageUrl2=extractFace2Url(data);
-    const face2Name=extractFace2Name(data);
-    state.cards.push({qty,name:data.name||name,imageUrl,imageUrl2,face2Name,lang:data.lang||lang,printId:data.id,error:false});
-  }
+            setLog(`Fase 1/2: obteniendo ${uniqueNames.length} cartas…`);
 
-  setProgress(100);
-  renderPreview(state.cards);
-  updateStats(state.cards.filter(c=>!c.error));
+            // Intentar batch primero (1-2 requests para todo el mazo)
+            // Si falla, fallback a requests individuales automáticamente
+            let batchOk = false;
+            try {
+                for (let i = 0; i < uniqueNames.length; i += CHUNK) {
+                    if (controller.signal.aborted) break;
+                    const chunk = uniqueNames.slice(i, i + CHUNK);
+                    const { map } = await fetchCollectionBatch(chunk);
+                    for (const [k, v] of map) enMap.set(k, v);
+                    setProgress(Math.round((Math.min(i + CHUNK, uniqueNames.length)) / uniqueNames.length * 40));
+                }
+                batchOk = true;
+            } catch (e) {
+                console.warn('Batch falló, usando fallback individual:', e.message);
+            }
 
-  const totalOk=state.cards.filter(c=>!c.error).length;
-  if(totalOk===0){setLog('No se pudo cargar ninguna carta. Revisa los nombres.','error')}
-  else if(errors>0){setLog(`Listo con ${errors} error${errors!==1?'es':''}. Haz clic en una carta para cambiar arte o idioma.`,'error');document.getElementById('btn-pdf').disabled=false}
-  else{setLog(`✓ ${totalOk} carta${totalOk!==1?'s':''} cargadas. Haz clic en cualquier carta para cambiar su arte o idioma.`,'ok');document.getElementById('btn-pdf').disabled=false}
-  state.loading=false;
-  document.getElementById('btn-load').disabled=false;
-}
+            // Fallback: buscar individualmente las que no se cargaron por batch
+            if (!batchOk || enMap.size < uniqueNames.length) {
+                const missing = uniqueNames.filter(n => !enMap.has(normalizeCardName(n)));
+                if (missing.length > 0) {
+                    setLog(`Buscando ${missing.length} carta${missing.length !== 1 ? 's' : ''} individualmente…`);
+                    let done = 0;
+                    const fallbackTasks = missing.map(name => async () => {
+                        if (controller.signal.aborted) return;
+                        try {
+                            const res = await fetchWithRetry(
+                                'https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(name),
+                                controller.signal ? { signal: controller.signal } : {}
+                            );
+                            if (res && res.ok) {
+                                const card = await res.json();
+                                const key = normalizeCardName(card.name);
+                                enMap.set(key, card);
+                                // DFC: guardar también por primera cara
+                                if (card.name.includes(' // ')) {
+                                    enMap.set(normalizeCardName(card.name.split(' // ')[0].trim()), card);
+                                }
+                                // También indexar por nombre buscado
+                                enMap.set(normalizeCardName(name), card);
+                            }
+                        } catch (e) {
+                            if (!controller.signal?.aborted)
+                                console.warn('Fallback error "' + name + '":', e.message);
+                        }
+                        done++;
+                        setProgress(Math.round(done / missing.length * 40));
+                        setLog(`Cargando ${done}/${missing.length}…`);
+                    });
+                    await runWithConcurrency(fallbackTasks, 4);
+                }
+            }
 
-async function openModal(i){
-  const card=state.cards[i];
-  if(!card||card.error)return;
-  modal.cardIndex=i;
-  modal.selectedPrintId=card.printId;
-  modal.currentLang=card.lang||getGlobalLang();
-  modal.prints=[];
-  document.getElementById('modal-card-name').textContent=card.name;
-  document.getElementById('modal-lang').value=modal.currentLang;
-  document.getElementById('btn-apply').disabled=true;
-  document.getElementById('modal-print-count').textContent='';
-  document.getElementById('art-modal').classList.add('open');
-  document.body.style.overflow='hidden';
-  await loadPrints(card.name,modal.currentLang);
-}
+            if (controller.signal.aborted) { state.loading = false; return; }
 
-async function loadPrints(name,lang){
-  const grid=document.getElementById('prints-grid');
-  grid.innerHTML=`<div class="prints-loading"><div class="spinner"></div> Buscando en ${LANG_NAMES[lang]||lang}…</div>`;
-  document.getElementById('modal-print-count').textContent='';
-  document.getElementById('btn-apply').disabled=true;
-  try{
-    const prints=await fetchPrints(name,lang);
-    modal.prints=prints;
-    if(!prints.length){grid.innerHTML=`<div class="no-prints">No hay impresiones en este idioma.<br>Prueba con otro.</div>`;return}
-    const langs=[...new Set(prints.map(p=>p.lang))];
-    const note=langs.length===1&&langs[0]!==lang?' (mostrando EN como fallback)':'';
-    document.getElementById('modal-print-count').textContent=`${prints.length} impresión${prints.length!==1?'es':''}${note}`;
-    renderPrints(prints,modal.selectedPrintId);
-  }catch(e){
-    grid.innerHTML=`<div class="no-prints">Error: ${e.message}</div>`;
-  }
-}
+            const langMap = new Map();
 
-function renderPrints(prints,selectedId){
-  const grid=document.getElementById('prints-grid');
-  grid.innerHTML='';
-  for(const p of prints){
-    const div=document.createElement('div');
-    div.className='print-card'+(p.id===selectedId?' selected':'');
-    const dfcIndicator=p.imageUrl2?'<span style="color:#aa77ff;font-size:0.6rem">⟲ 2 caras</span>':'';
-    div.innerHTML=`<img src="${p.imageUrl}" alt="${p.cardName}" loading="lazy"/><div class="print-meta"><span class="set-name">${p.setName} ${dfcIndicator}</span><span class="set-detail">${p.setCode} · ${p.year}</span><span class="set-detail">✎ ${p.artist}</span></div>`;
-    div.addEventListener('click',()=>selectPrint(p.id));
-    grid.appendChild(div);
-  }
-  document.getElementById('btn-apply').disabled=selectedId===null;
-}
+            if (lang !== 'en') {
+                const needsLang = uniqueNames.filter(n => enMap.get(normalizeCardName(n)));
 
-function selectPrint(printId){
-  modal.selectedPrintId=printId;
-  document.getElementById('btn-apply').disabled=false;
-  document.querySelectorAll('.print-card').forEach(el=>el.classList.remove('selected'));
-  const idx=modal.prints.findIndex(p=>p.id===printId);
-  if(idx>=0)document.querySelectorAll('.print-card')[idx]?.classList.add('selected');
-}
+                // Separar las que ya tenemos en cache de las que hay que buscar
+                const toFetch = [];
+                for (const name of needsLang) {
+                    const cacheKey = normalizeCardName(name) + '|' + lang;
+                    if (state.langCache[cacheKey]) {
+                        langMap.set(normalizeCardName(name), state.langCache[cacheKey]);
+                    } else {
+                        toFetch.push(name);
+                    }
+                }
 
-async function onModalLangChange(){
-  const lang=document.getElementById('modal-lang').value;
-  modal.currentLang=lang;modal.selectedPrintId=null;modal.prints=[];
-  const card=state.cards[modal.cardIndex];
-  if(card)await loadPrints(card.name,lang);
-}
+                const cached = needsLang.length - toFetch.length;
+                setLog(`Fase 2/2: ${LANG_NAMES[lang] || lang} — ${cached} en caché, buscando ${toFetch.length}...`);
 
-async function applySelection(){
-  if(modal.selectedPrintId===null||modal.cardIndex<0)return;
-  const print=modal.prints.find(p=>p.id===modal.selectedPrintId);
-  if(!print)return;
-  const btn=document.getElementById('btn-apply');
-  btn.textContent='Aplicando…';btn.disabled=true;
-  const card=state.cards[modal.cardIndex];
-  // Guardar nueva URL e invalidar cache base64 — se reconvertirá al generar PDF
-  card.imageUrl  = print.imageUrl;
-  card.imageUrl2 = print.imageUrl2 || null;  // cara 2 de la misma impresión
-  card.face2Name = print.face2Name || card.face2Name;
-  card._b64      = null;
-  card._b64face2 = null;
-  card.lang      = print.lang||modal.currentLang;
-  card.printId   = print.id;
-  closeModal();
-  renderPreview(state.cards);
-  setLog(`✓ Arte actualizado: ${card.name} · ${print.setName} (${print.year})`,'ok');
-}
+                if (toFetch.length > 0) {
+                    let done = 0, errors = 0;
+                    const tasks = toFetch.map(name => async () => {
+                        if (controller.signal.aborted) return;
+                        try {
+                            const localCard = await fetchCardLang(name, lang, controller.signal);
+                            if (localCard) {
+                                langMap.set(normalizeCardName(name), localCard);
+                                state.langCache[normalizeCardName(name) + '|' + lang] = localCard;
+                            }
+                        } catch (e) {
+                            if (controller.signal.aborted) return;
+                            errors++;
+                        }
+                        done++;
+                        setProgress(40 + Math.round(done / toFetch.length * 40));
+                        setLog(`Buscando ${LANG_NAMES[lang] || lang}... ${done}/${toFetch.length}${errors ? ' (' + errors + ' errores)' : ''}`);
+                        // Pausa mínima entre requests al endpoint /cards/search
+                        // evita rate limit silencioso de Scryfall (sin 429, solo respuesta vacía)
+                        if (!controller.signal.aborted) await new Promise(r => setTimeout(r, 120));
+                    });
+                    await runWithConcurrency(tasks, 2); // /cards/search es más sensible al rate limit que /cards/named
+                }
+            }
 
-function closeModal(){
-  document.getElementById('art-modal').classList.remove('open');
-  document.body.style.overflow='';
-  const btn=document.getElementById('btn-apply');
-  btn.textContent='✓ Usar esta impresión';btn.disabled=true;
-}
-function closeModalOnOverlay(e){if(e.target===document.getElementById('art-modal'))closeModal()}
+            if (controller.signal.aborted) { state.loading = false; return; }
 
-async function generatePDF(){
-  const{jsPDF}=window.jspdf;
+            let errors = 0;
+            for (const { qty, name } of parsed) {
+                const key = normalizeCardName(name);
+                const data = langMap.get(key) || enMap.get(key);
+                if (!data) {
+                    errors++;
+                    state.cards.push({ qty, name, imageUrl: null, lang, printId: null, error: 'No encontrada en Scryfall' });
+                    continue;
+                }
+                const imageUrl = extractImageUrl(data, 'small');
+                const pdfImageUrl = extractImageUrl(data, 'normal');
+                if (!imageUrl) {
+                    errors++;
+                    state.cards.push({ qty, name, imageUrl: null, lang, printId: null, error: 'Sin imagen disponible' });
+                    continue;
+                }
 
-  // Cartas únicas válidas (sin duplicar por qty aún — las duplicamos al insertar)
-  const unique=state.cards.filter(c=>!c.error&&c.imageUrl);
-  if(!unique.length){setLog('No hay cartas válidas para generar el PDF.','error');return}
+                const imageUrl2 = extractFace2Url(data, 'small');
+                const pdfImageUrl2 = extractFace2Url(data, 'normal');
+                const face2Name = extractFace2Name(data);
 
-  setLog('Convirtiendo imágenes…');
-  setProgress(0);
-  document.getElementById('btn-pdf').disabled=true;
+                state.cards.push({
+                    qty,
+                    name: data.name || name,
+                    imageUrl,       // small  — preview inicial (rápido)
+                    imageUrlHQ: pdfImageUrl,  // normal — preview HQ (se carga después)
+                    pdfImageUrl,
+                    imageUrl2,
+                    imageUrl2HQ: pdfImageUrl2,
+                    pdfImageUrl2,
+                    face2Name,
+                    lang: data.lang || lang,
+                    printId: data.id,
+                    error: false,
+                    hqLoaded: false,
+                });
+            }
 
-  // Convertir a base64 solo ahora, en paralelo de 4 en 4
-  let done=0,convErrors=0;
-  const convTasks=unique.map(card=>async()=>{
-    try{
-      if(!card._b64)
-        card._b64=await imageUrlToBase64(card.imageUrl);
-      if(card.imageUrl2&&!card._b64face2)
-        card._b64face2=await imageUrlToBase64(card.imageUrl2);
-    }catch(e){
-      convErrors++;
-      console.warn('Error convirtiendo imagen de "'+card.name+'":', e.message);
-      // La carta se saltará en el PDF (sin _b64), pero no bloquea el resto
-    }
-    done++;
-    setProgress(Math.round(done/unique.length*50));
-    setLog(`Procesando ${done}/${unique.length}${convErrors?' ('+convErrors+' errores)':''}…`);
-  });
-  await runWithConcurrency(convTasks,4);
-  if(convErrors>0)setLog(`${convErrors} imagen${convErrors!==1?'es':''} no se pudo${convErrors!==1?'eron':''} convertir — se omitirán en el PDF.`,'error');
+            setProgress(100);
+            renderPreview(state.cards);
+            updateStats(state.cards.filter(c => !c.error));
 
-  // Expandir por cantidad para el PDF
-  // Expandir por cantidad: para DFCs, intercalar cara1 y cara2 por cada copia
-  // Resultado: [cara1, cara2, cara1, cara2, ...] → recortar y pegar espalda con espalda
-  const deck=[];
-  for(const card of state.cards){
-    if(card.error||!card._b64)continue;
-    const isDFC=!!card._b64face2;
-    for(let i=0;i<card.qty;i++){
-      deck.push({...card,_useB64:card._b64,_faceLabel:isDFC?'◑ C1':null});
-      if(isDFC){
-        deck.push({...card,_useB64:card._b64face2,_faceLabel:'◑ C2'});
-      }
-    }
-  }
+            const totalOk = state.cards.filter(c => !c.error).length;
+            if (totalOk === 0) { setLog('No se pudo cargar ninguna carta. Revisa los nombres.', 'error') }
+            else if (errors > 0) { setLog(`Listo con ${errors} error${errors !== 1 ? 'es' : ''}. Haz clic en una carta para cambiar arte o idioma.`, 'error'); document.getElementById('btn-pdf').disabled = false }
+            else { setLog(`✓ ${totalOk} carta${totalOk !== 1 ? 's' : ''} cargadas. Mejorando calidad…`, 'ok'); document.getElementById('btn-pdf').disabled = false }
+            state.loading = false;
+            document.getElementById('btn-load').disabled = false;
 
-  setLog('Generando PDF…');
-  const PAGE_W=210,PAGE_H=297,CARD_W=63,CARD_H=88,COLS=3,ROWS=3,CPP=9;
-  const MX=(PAGE_W-COLS*CARD_W)/2,MY=(PAGE_H-ROWS*CARD_H)/2;
-  const pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+            // Lanzar upgrade HQ en background sin bloquear la UI
+            upgradePreviewHQ(state.cards);
+        }
 
-  for(let i=0;i<deck.length;i++){
-    const pos=i%CPP;
-    if(pos===0&&i>0)pdf.addPage();
-    const col=pos%COLS,row=Math.floor(pos/COLS);
-    const x=MX+col*CARD_W,y=MY+row*CARD_H;
-    // Detectar formato desde el data URL (JPEG, PNG, WEBP...)
-    const fmt=deck[i]._useB64.split(';')[0].split('/')[1].toUpperCase().replace('JPEG','JPEG').replace('JPG','JPEG');
-    pdf.addImage(deck[i]._useB64,fmt||'JPEG',x,y,CARD_W,CARD_H);
-    pdf.setDrawColor(160,160,160);pdf.setLineWidth(0.15);pdf.rect(x,y,CARD_W,CARD_H);
-    // Label C1/C2 para cartas DFC: facilita emparejarlas al cortar
-    if(deck[i]._faceLabel){
-      pdf.setFontSize(5.5);
-      pdf.setTextColor(180,140,255);
-      pdf.text(deck[i]._faceLabel,x+CARD_W-1,y+CARD_H-1.5,{align:'right'});
-      pdf.setTextColor(0,0,0);
-    }
-    setProgress(50+Math.round((i+1)/deck.length*50)); // segunda mitad
-  }
+        function debounce(fn, delay) {
+            let t;
+            return (...args) => {
+                clearTimeout(t);
+                t = setTimeout(() => fn(...args), delay);
+            };
+        }
 
-  const totalPages=Math.ceil(deck.length/CPP);
-  for(let p=1;p<=totalPages;p++){
-    pdf.setPage(p);
-    pdf.setFontSize(6);
-    pdf.setTextColor(140,130,110);
-    pdf.text('Imprimir al 100% sin escalar — cartas 63×88 mm (tamaño real) — desactivar "ajustar a página"',PAGE_W/2,PAGE_H-4,{align:'center'});
-    pdf.setTextColor(0,0,0);
-  }
-  pdf.save('mtg-proxies.pdf');
-  setProgress(100);
-  const pages=Math.ceil(deck.length/CPP);
-  setLog(`✓ PDF: ${deck.length} carta${deck.length!==1?'s':''} en ${pages} página${pages!==1?'s':''}.`,'ok');
-  document.getElementById('btn-pdf').disabled=false;
-}
+        async function openModal(i) {
+            const card = state.cards[i];
+            if (!card || card.error) return;
+            modal.cardIndex = i;
+            modal.selectedPrintId = card.printId;
+            modal.currentLang = card.lang || getGlobalLang();
+            modal.prints = [];
+            document.getElementById('modal-card-name').textContent = card.name;
+            document.getElementById('modal-lang').value = modal.currentLang;
+            document.getElementById('btn-apply').disabled = true;
+            document.getElementById('modal-print-count').textContent = '';
+            document.getElementById('art-modal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            await loadPrints(card.name, modal.currentLang);
+        }
 
-document.getElementById('deck-input').addEventListener('input',function(){
-  updateStats(parseArena(this.value));
-});
-</script>
+        async function loadPrints(name, lang) {
+            const grid = document.getElementById('prints-grid');
+            grid.innerHTML = `<div class="prints-loading"><div class="spinner"></div> Buscando en ${LANG_NAMES[lang] || lang}…</div>`;
+            document.getElementById('modal-print-count').textContent = '';
+            document.getElementById('btn-apply').disabled = true;
+            try {
+                const prints = await fetchPrints(name, lang);
+                modal.prints = prints;
+                if (!prints.length) { grid.innerHTML = `<div class="no-prints">No hay impresiones en este idioma.<br>Prueba con otro.</div>`; return }
+                const langs = [...new Set(prints.map(p => p.lang))];
+                const note = langs.length === 1 && langs[0] !== lang ? ' (mostrando EN como fallback)' : '';
+                document.getElementById('modal-print-count').textContent = `${prints.length} impresión${prints.length !== 1 ? 'es' : ''}${note}`;
+                renderPrints(prints, modal.selectedPrintId);
+            } catch (e) {
+                grid.innerHTML = `<div class="no-prints">Error: ${e.message}</div>`;
+            }
+        }
+
+        function renderPrints(prints, selectedId) {
+            const grid = document.getElementById('prints-grid');
+            grid.innerHTML = '';
+            for (const p of prints) {
+                const div = document.createElement('div');
+                div.className = 'print-card' + (p.id === selectedId ? ' selected' : '');
+                const dfcIndicator = p.imageUrl2 ? '<span style="color:#aa77ff;font-size:0.6rem">⟲ 2 caras</span>' : '';
+                div.innerHTML = `<img src="${p.imageUrl}" alt="${p.cardName}" loading="lazy"/><div class="print-meta"><span class="set-name">${p.setName} ${dfcIndicator}</span><span class="set-detail">${p.setCode} · ${p.year}</span><span class="set-detail">✎ ${p.artist}</span></div>`;
+                div.addEventListener('click', () => selectPrint(p.id));
+                grid.appendChild(div);
+            }
+            document.getElementById('btn-apply').disabled = selectedId === null;
+        }
+
+        function selectPrint(printId) {
+            modal.selectedPrintId = printId;
+            document.getElementById('btn-apply').disabled = false;
+            document.querySelectorAll('.print-card').forEach(el => el.classList.remove('selected'));
+            const idx = modal.prints.findIndex(p => p.id === printId);
+            if (idx >= 0) document.querySelectorAll('.print-card')[idx]?.classList.add('selected');
+        }
+
+        async function onModalLangChange() {
+            const lang = document.getElementById('modal-lang').value;
+            modal.currentLang = lang; modal.selectedPrintId = null; modal.prints = [];
+            const card = state.cards[modal.cardIndex];
+            if (card) await loadPrints(card.name, lang);
+        }
+
+        async function applySelection() {
+            if (modal.selectedPrintId === null || modal.cardIndex < 0) return;
+            const print = modal.prints.find(p => p.id === modal.selectedPrintId);
+            if (!print) return;
+            const btn = document.getElementById('btn-apply');
+            btn.textContent = 'Aplicando…'; btn.disabled = true;
+            const card = state.cards[modal.cardIndex];
+
+            card.imageUrl = print.imageUrl;
+            card.imageUrl2 = print.imageUrl2 || null;
+            card.pdfImageUrl = print.pdfImageUrl;
+            card.pdfImageUrl2 = print.pdfImageUrl2 || null;
+            card.face2Name = print.face2Name || card.face2Name;
+            card._b64 = null;
+            card._b64face2 = null;
+            card._blob = null;
+            card._blob2 = null;
+            card.lang = print.lang || modal.currentLang;
+            card.printId = print.id;
+
+            // Actualizar URLs HQ con las de la nueva impresión
+            card.imageUrlHQ = print.pdfImageUrl || card.pdfImageUrl;
+            card.imageUrl2HQ = print.pdfImageUrl2 || null;
+            card.hqLoaded = false;
+            closeModal();
+            renderPreview(state.cards);
+            setLog(`✓ Arte actualizado: ${card.name} · ${print.setName} (${print.year})`, 'ok');
+            upgradePreviewHQ(state.cards);
+        }
+
+        function closeModal() {
+            document.getElementById('art-modal').classList.remove('open');
+            document.body.style.overflow = '';
+            const btn = document.getElementById('btn-apply');
+            btn.textContent = '✓ Usar esta impresión'; btn.disabled = true;
+        }
+        function closeModalOnOverlay(e) { if (e.target === document.getElementById('art-modal')) closeModal() }
+
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+
+            const unique = state.cards.filter(c => !c.error && c.imageUrl);
+            if (!unique.length) { setLog('No hay cartas válidas para generar el PDF.', 'error'); return }
+
+            setLog('Descargando imágenes…');
+            setProgress(0);
+
+            const concurrency = Math.min(navigator.hardwareConcurrency || 8, 10);
+            let done = 0;
+
+            const tasks = unique.map(card => async () => {
+                try {
+                    if (!card._blob) {
+                        card._blob = await fetchImageBlob(card.pdfImageUrl);
+                    }
+                    if (card.pdfImageUrl2 && !card._blob2) {
+                        card._blob2 = await fetchImageBlob(card.pdfImageUrl2);
+                    }
+                    card._b64 = card._blob;
+                    if (card._blob2) {
+                        card._b64face2 = card._blob2;
+                    }
+                } catch (e) {
+                    console.error("Error al descargar: " + card.name, e);
+                }
+                done++;
+                setProgress(Math.round(done / unique.length * 50));
+            });
+
+            await runWithConcurrency(tasks, concurrency);
+
+            const deck = [];
+            for (const card of state.cards) {
+                if (card.error || !card._b64) continue;
+                const isDFC = !!card.pdfImageUrl2;
+                for (let i = 0; i < card.qty; i++) {
+                    deck.push({ ...card, _useBlob: card._b64, _faceLabel: isDFC ? '◑ C1' : null });
+                    // ARREGLADO: Solo insertar la cara 2 si realmente tenemos una imagen para ella
+                    if (isDFC && card._b64face2) {
+                        deck.push({ ...card, _useBlob: card._b64face2, _faceLabel: '◑ C2' });
+                    }
+                }
+            }
+
+            setLog('Generando PDF…');
+            const PAGE_W = 210, PAGE_H = 297, CARD_W = 63, CARD_H = 88, COLS = 3, ROWS = 3, CPP = 9;
+            const MX = (PAGE_W - COLS * CARD_W) / 2, MY = (PAGE_H - ROWS * CARD_H) / 2;
+            const pdf = new jsPDF({
+                unit: 'mm',
+                format: 'a4',
+                orientation: 'portrait',
+                compress: true
+            });
+
+            for (let i = 0; i < deck.length; i++) {
+                const pos = i % CPP;
+                if (pos === 0 && i > 0) pdf.addPage();
+                const col = pos % COLS, row = Math.floor(pos / COLS);
+                const x = MX + col * CARD_W, y = MY + row * CARD_H;
+
+                // ARREGLADO: try/catch por si alguna imagen está corrupta o el canvas falla
+                try {
+                    const bitmap = await createImageBitmap(deck[i]._useBlob);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = bitmap.width;
+                    canvas.height = bitmap.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(bitmap, 0, 0);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+                    pdf.addImage(
+                        dataUrl,
+                        'JPEG',
+                        x,
+                        y,
+                        CARD_W,
+                        CARD_H,
+                        undefined,
+                        'FAST'
+                    );
+                } catch (e) {
+                    console.error("Error renderizando imagen para PDF", e);
+                }
+
+                pdf.setDrawColor(160, 160, 160); pdf.setLineWidth(0.15); pdf.rect(x, y, CARD_W, CARD_H);
+
+                if (deck[i]._faceLabel) {
+                    pdf.setFontSize(5.5);
+                    pdf.setTextColor(180, 140, 255);
+                    pdf.text(deck[i]._faceLabel, x + CARD_W - 1, y + CARD_H - 1.5, { align: 'right' });
+                    pdf.setTextColor(0, 0, 0);
+                }
+                setProgress(50 + Math.round((i + 1) / deck.length * 50));
+            }
+
+            const totalPages = Math.ceil(deck.length / CPP);
+            for (let p = 1; p <= totalPages; p++) {
+                pdf.setPage(p);
+                pdf.setFontSize(6);
+                pdf.setTextColor(140, 130, 110);
+                pdf.text('Imprimir al 100% sin escalar — cartas 63×88 mm (tamaño real) — desactivar "ajustar a página"', PAGE_W / 2, PAGE_H - 4, { align: 'center' });
+                pdf.setTextColor(0, 0, 0);
+            }
+            pdf.save('mtg-proxies.pdf');
+            setProgress(100);
+            const pages = Math.ceil(deck.length / CPP);
+            setLog(`✓ PDF: ${deck.length} carta${deck.length !== 1 ? 's' : ''} en ${pages} página${pages !== 1 ? 's' : ''}.`, 'ok');
+            document.getElementById('btn-pdf').disabled = false;
+        }
+
+        // Carga progresiva: reemplaza imágenes small → normal en background
+        // sin bloquear la UI ni rehacer el DOM completo
+        async function upgradePreviewHQ(cards) {
+            const batchId = ++upgradePreviewHQ._id;
+            const valid = cards.filter(c => !c.error && c.imageUrlHQ && !c.hqLoaded);
+            if (!valid.length) { setLog(state.cards.filter(c=>!c.error).length + ' cartas listas.', 'ok'); return; }
+
+            let done = 0;
+            for (const card of valid) {
+                // Cancelar si se lanzó una nueva carga
+                if (batchId !== upgradePreviewHQ._id) return;
+
+                await new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        card.imageUrl = card.imageUrlHQ;
+                        if (card.imageUrl2HQ) card.imageUrl2 = card.imageUrl2HQ;
+                        card.hqLoaded = true;
+                        // Actualizar solo el <img> de esta carta en el DOM
+                        // sin reconstruir todo el grid
+                        const thumbs = document.querySelectorAll('.card-thumb img');
+                        // Encontrar el thumb correcto por posición en state.cards
+                        const cardIdx = state.cards.indexOf(card);
+                        if (cardIdx >= 0 && thumbs[cardIdx]) {
+                            thumbs[cardIdx].classList.remove('hq-loading');
+                            thumbs[cardIdx].src = card.imageUrl;
+                        }
+                        resolve();
+                    };
+                    img.onerror = () => resolve(); // falló la HQ, quedamos con small
+                    // Marcar como cargando (blur sutil)
+                    const thumbs = document.querySelectorAll('.card-thumb img');
+                    const cardIdx = state.cards.indexOf(card);
+                    if (cardIdx >= 0 && thumbs[cardIdx]) {
+                        thumbs[cardIdx].classList.add('hq-loading');
+                    }
+                    img.src = card.imageUrlHQ + (card.imageUrlHQ.includes('?') ? '&' : '?') + '_hq=1';
+                    // Timeout: si tarda más de 8s, pasar a la siguiente
+                    setTimeout(resolve, 8000);
+                });
+
+                done++;
+                // Actualizar log cada 10 cartas para no spamear
+                if (done % 10 === 0 || done === valid.length) {
+                    if (batchId === upgradePreviewHQ._id) {
+                        setLog(done < valid.length
+                            ? `Mejorando calidad… ${done}/${valid.length}`
+                            : `✓ ${state.cards.filter(c=>!c.error).length} cartas en alta calidad.`, 'ok');
+                    }
+                }
+            }
+        }
+        upgradePreviewHQ._id = 0;
+
+                document.getElementById('deck-input').addEventListener('input', debounce(function () {
+            updateStats(parseArena(this.value));
+        }, 250));
+    </script>
 </body>
 </html>
