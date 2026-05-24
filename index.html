@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.1" />
-    <title>MTG Proxy Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MTG Proxy Generator 1.2</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -952,33 +952,50 @@
             return { map };
         }
 
-        async function fetchCardLang(name, lang, signal) {
-            const q = '!"' + name + '" lang:' + lang;
-            const url = 'https://api.scryfall.com/cards/search?q=' + encodeURIComponent(q) + '&unique=prints&order=released&dir=desc';
+        // Busca un chunk de nombres en el idioma usando OR — 1 request por batch.
+        // Scryfall acepta: (!"Sol Ring" OR !"Force of Will") lang:es
+        // Devuelve Map<normalizedName → cardData>
+        async function fetchCardLangBatch(names, lang, signal) {
+            const orParts = names.map(n => '!"' + n + '"').join(' OR ');
+            const q = '(' + orParts + ') lang:' + lang;
+            const url = 'https://api.scryfall.com/cards/search?q=' + encodeURIComponent(q) +
+                        '&unique=cards&order=released&dir=desc';
+            // unique=cards: devuelve 1 resultado por carta, no múltiples impresiones
             const opts = signal ? { signal } : {};
             const res = await fetchWithRetry(url, opts);
-            if (!res || !res.ok) return null;
+            const result = new Map();
+            if (!res || !res.ok) return result;
+
             const data = await res.json();
-            if (!data.data?.length) return null;
-            // Buscar coincidencia exacta primero (nombre normalizado)
-            const normName = normalizeCardName(name);
-            const exact = data.data.find(c =>
-                (normalizeCardName(c.name) === normName ||
-                 normalizeCardName(c.printed_name || '') === normName) &&
-                hasValidImage(c)
-            );
-            if (exact) return exact;
-            // Solo aceptar 'first' si el nombre de la carta coincide razonablemente
-            // (evita que una búsqueda devuelva una carta completamente diferente)
-            const first = data.data.find(c => hasValidImage(c));
-            if (!first) return null;
-            const firstNorm = normalizeCardName(first.name);
-            // Rechazar si el nombre es demasiado diferente (puede ser falso positivo del search)
-            if (!firstNorm.includes(normName.split(' ')[0]) && !normName.includes(firstNorm.split(' ')[0])) {
-                console.warn('fetchCardLang: posible falso positivo para "' + name + '" → "' + first.name + '"');
-                return null;
+
+            // Construir lookup de nombres buscados (normalizados)
+            const nameSet = new Map(names.map(n => [normalizeCardName(n), n]));
+
+            for (const card of (data.data || [])) {
+                if (!hasValidImage(card)) continue;
+
+                // Scryfall devuelve el nombre en inglés en card.name siempre.
+                // El nombre en el idioma local está en card.printed_name (si difiere).
+                const normCardEN  = normalizeCardName(card.name);
+                // Para DFC, Scryfall devuelve "Cara A // Cara B" — probar también solo cara A
+                const normFace1   = normalizeCardName(card.name.split(' // ')[0]);
+
+                // Buscar coincidencia exacta contra los nombres pedidos
+                let matchKey = null;
+                if (nameSet.has(normCardEN))  matchKey = normCardEN;
+                else if (nameSet.has(normFace1)) matchKey = normFace1;
+
+                if (matchKey && !result.has(matchKey)) {
+                    result.set(matchKey, card);
+                }
             }
-            return first;
+            return result;
+        }
+
+        // Wrapper individual (para compatibilidad con applySelection)
+        async function fetchCardLang(name, lang, signal) {
+            const map = await fetchCardLangBatch([name], lang, signal);
+            return map.get(normalizeCardName(name)) || null;
         }
 
         function extractImageUrl(data, size = 'normal') {
@@ -1067,6 +1084,7 @@
             cards.forEach((card, i) => {
                 const div = document.createElement('div');
                 div.className = 'card-thumb';
+                div.dataset.cardIdx = i; // para que upgradePreviewHQ encuentre el thumb correcto
                 div.draggable = true;
 
                 if (card.error) {
@@ -1290,27 +1308,38 @@
                 setLog(`Fase 2/2: ${LANG_NAMES[lang] || lang} — ${cached} en caché, buscando ${toFetch.length}...`);
 
                 if (toFetch.length > 0) {
+                    // Agrupar en batches de 12 — cada batch = 1 request OR en vez de 12 individuales
+                    // Ej: (!"Sol Ring" OR !"Lightning Bolt" OR ...) lang:es
+                    const BATCH_SIZE = 12;
+                    const batches = [];
+                    for (let i = 0; i < toFetch.length; i += BATCH_SIZE) {
+                        batches.push(toFetch.slice(i, i + BATCH_SIZE));
+                    }
+
                     let done = 0, errors = 0;
-                    const tasks = toFetch.map(name => async () => {
-                        if (controller.signal.aborted) return;
+                    for (const batch of batches) {
+                        if (controller.signal.aborted) break;
                         try {
-                            const localCard = await fetchCardLang(name, lang, controller.signal);
-                            if (localCard) {
-                                langMap.set(normalizeCardName(name), localCard);
-                                state.langCache[normalizeCardName(name) + '|' + lang] = localCard;
+                            const batchMap = await fetchCardLangBatch(batch, lang, controller.signal);
+                            for (const name of batch) {
+                                const key = normalizeCardName(name);
+                                const card = batchMap.get(key);
+                                if (card) {
+                                    langMap.set(key, card);
+                                    state.langCache[key + '|' + lang] = card;
+                                }
                             }
                         } catch (e) {
-                            if (controller.signal.aborted) return;
+                            if (controller.signal.aborted) break;
                             errors++;
+                            console.warn('Error en batch lang:', e.message);
                         }
-                        done++;
+                        done += batch.length;
                         setProgress(40 + Math.round(done / toFetch.length * 40));
-                        setLog(`Buscando ${LANG_NAMES[lang] || lang}... ${done}/${toFetch.length}${errors ? ' (' + errors + ' errores)' : ''}`);
-                        // Pausa entre requests al endpoint /cards/search
-                        // 300ms = ~3 req/seg, bien bajo el límite real de Scryfall
-                        if (!controller.signal.aborted) await new Promise(r => setTimeout(r, 300));
-                    });
-                    await runWithConcurrency(tasks, 1); // Serial puro — /cards/search tiene límite muy estricto
+                        setLog(`Buscando ${LANG_NAMES[lang] || lang}... ${Math.min(done, toFetch.length)}/${toFetch.length}${errors ? ' (' + errors + ' lotes con error)' : ''}`);
+                        // 400ms entre batches — cada batch ya hace 1 sola request
+                        if (!controller.signal.aborted) await new Promise(r => setTimeout(r, 400));
+                    }
                 }
             }
 
@@ -1609,24 +1638,21 @@
                         card.imageUrl = card.imageUrlHQ;
                         if (card.imageUrl2HQ) card.imageUrl2 = card.imageUrl2HQ;
                         card.hqLoaded = true;
-                        // Actualizar solo el <img> de esta carta en el DOM
-                        // sin reconstruir todo el grid
-                        const thumbs = document.querySelectorAll('.card-thumb img');
-                        // Encontrar el thumb correcto por posición en state.cards
+                        // Buscar el thumb por data-card-idx — evita desplazamientos
+                        // cuando hay cartas de error (sin <img>) antes de esta carta
                         const cardIdx = state.cards.indexOf(card);
-                        if (cardIdx >= 0 && thumbs[cardIdx]) {
-                            thumbs[cardIdx].classList.remove('hq-loading');
-                            thumbs[cardIdx].src = card.imageUrl;
+                        const thumb = document.querySelector('.card-thumb[data-card-idx="' + cardIdx + '"] img');
+                        if (thumb) {
+                            thumb.classList.remove('hq-loading');
+                            thumb.src = card.imageUrl;
                         }
                         resolve();
                     };
                     img.onerror = () => resolve(); // falló la HQ, quedamos con small
-                    // Marcar como cargando (blur sutil)
-                    const thumbs = document.querySelectorAll('.card-thumb img');
-                    const cardIdx = state.cards.indexOf(card);
-                    if (cardIdx >= 0 && thumbs[cardIdx]) {
-                        thumbs[cardIdx].classList.add('hq-loading');
-                    }
+                    // Marcar como cargando (blur sutil) — usar data-card-idx
+                    const cardIdx2 = state.cards.indexOf(card);
+                    const thumbLoading = document.querySelector('.card-thumb[data-card-idx="' + cardIdx2 + '"] img');
+                    if (thumbLoading) thumbLoading.classList.add('hq-loading');
                     img.src = card.imageUrlHQ + (card.imageUrlHQ.includes('?') ? '&' : '?') + '_hq=1';
                     // Timeout: si tarda más de 8s, pasar a la siguiente
                     setTimeout(resolve, 8000);
