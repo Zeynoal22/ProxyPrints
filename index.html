@@ -1,57 +1,55 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MTG Forge | Premium Proxy Studio</title>
+    <title>MTG Proxy Generator - Premium Studio</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
         /* ==========================================================================
-           1. DESIGN TOKENS (SCRYFALL / MTG ARENA DARK INSPIRED)
+           1. TOKENS DE DISEÑO MODERNO (Inspiración Scryfall, Arena y Companion)
            ========================================================================== */
         :root {
-            /* Colores de Fondo y Superficie */
-            --bg-gradient: linear-gradient(135deg, #090d0a 0%, #111812 50%, #151e16 100%);
-            --bg: #0b100c;
-            --bg-alt: #121913;
+            /* Paleta Oscura Premium (Evitando negro puro, usando gradientes oliva/musgo sutiles) */
+            --bg-main: #0b100c;
+            --bg-gradient: linear-gradient(135deg, #090d0a 0%, #111812 50%, #152217 100%);
             --surface: #162017;
-            --surface-elevated: #1f2d20;
-            --surface-accent: #263628;
-            /* Bordes y Divisiones */
-            --border: #2d3f30;
-            --border-glow: #3e5842;
-            /* Colores de Acento Estilo MTG */
+            --surface-elevated: #1f2d21;
+            --surface-accent: #263629;
+            --border: #2d3f31;
+            --border-glow: #3e5843;
+            /* Acentos de Color */
             --gold: #c5a059;
             --gold-hover: #e0be7a;
             --gold-dim: #8b6e3b;
-            --gold-glow: rgba(197, 160, 89, 0.25);
+            --gold-glow: rgba(197, 160, 89, 0.2);
             --green-mana: #225a33;
             --green-mana-hover: #2d7543;
-            --green-mana-glow: rgba(45, 117, 67, 0.3);
-            /* Estados y Alertas */
-            --text: #e2e8f0;
+            --green-mana-glow: rgba(45, 117, 67, 0.35);
+            /* Textos y Estados */
+            --text-main: #e2e8f0;
             --text-muted: #8fa393;
-            --text-dim: #647c6a;
+            --text-dim: #5c7562;
             --error: #f43f5e;
             --error-bg: rgba(244, 63, 94, 0.1);
             --ok: #10b981;
             --ok-bg: rgba(16, 185, 129, 0.1);
-            /* Sombras y Efectos */
-            --shadow-sm: 0 2px 8px rgba(0,0,0,0.5);
-            --shadow-md: 0 8px 24px rgba(0,0,0,0.6);
-            --shadow-lg: 0 16px 48px rgba(0,0,0,0.8);
-            --radius-sm: 6px;
-            --radius: 10px;
-            --radius-lg: 16px;
-            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Sombras e Interacciones */
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.6);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.7);
+            --shadow-lg: 0 16px 48px rgba(0,0,0,0.9);
+            --radius-sm: 4px;
+            --radius: 8px;
+            --radius-lg: 14px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* Variables Temáticas de Luz Alternativas (Mapeadas uno a uno) */
         [data-theme="light"] {
+            --bg-main: #f4f6f4;
             --bg-gradient: none;
-            --bg: #f4f6f4;
-            --bg-alt: #ebf0eb;
             --surface: #ffffff;
             --surface-elevated: #fcfdfc;
             --surface-accent: #e1eae2;
@@ -64,7 +62,7 @@
             --green-mana: #1b5e20;
             --green-mana-hover: #2e7d32;
             --green-mana-glow: rgba(46, 125, 50, 0.2);
-            --text: #0f172a;
+            --text-main: #0f172a;
             --text-muted: #475569;
             --text-dim: #64748b;
             --error: #dc2626;
@@ -77,7 +75,7 @@
         }
 
         /* ==========================================================================
-           2. BASE RESET & ESTRUCTURA GLOBAL
+           2. RESET & COMPONENTES BASE DE LA INTERFAZ
            ========================================================================== */
         *, *::before, *::after {
             box-sizing: border-box;
@@ -86,26 +84,25 @@
         }
 
         body {
-            background: var(--bg);
+            background-color: var(--bg-main);
             background-image: var(--bg-gradient);
-            color: var(--text);
+            color: var(--text-main);
             font-family: 'Inter', sans-serif;
             font-size: 14px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
-            letter-spacing: -0.01em;
         }
 
-        /* Scrollbars Customizados */
+        /* Scrollbars Estilizados */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--bg);
+            background: var(--bg-main);
         }
 
         ::-webkit-scrollbar-thumb {
@@ -117,9 +114,7 @@
                 background: var(--gold-dim);
             }
 
-        /* ==========================================================================
-           3. HEADER (STUDIO BAR)
-           ========================================================================== */
+        /* Header / Barra Superior Compacta */
         header {
             position: sticky;
             top: 0;
@@ -143,30 +138,26 @@
         }
 
         .logo-icon {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dim) 100%);
             clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-            box-shadow: 0 0 10px var(--gold-glow);
         }
 
         h1 {
             font-family: 'Cinzel', serif;
-            font-size: 1.15rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            color: var(--text);
-            line-height: 1;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
         }
 
             h1 span {
-                color: var(--gold);
-                font-weight: 500;
-                font-size: 0.68rem;
-                display: block;
-                margin-top: 4px;
-                letter-spacing: 0.15em;
                 font-family: 'Inter', sans-serif;
+                font-size: 0.7rem;
+                color: var(--gold);
+                display: block;
+                font-weight: 500;
+                letter-spacing: 0.12em;
                 text-transform: uppercase;
             }
 
@@ -180,10 +171,10 @@
             background: transparent;
             border: 1px solid var(--border);
             color: var(--text-muted);
-            padding: 8px 12px;
+            padding: 6px 12px;
             border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -200,38 +191,28 @@
             background: var(--surface-elevated);
             border: 1px solid var(--border);
             border-radius: 20px;
-            padding: 6px 14px;
+            padding: 4px 12px;
             cursor: pointer;
             font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text);
+            color: var(--text-main);
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: var(--transition);
+            gap: 6px;
         }
 
-            .theme-toggle:hover {
-                border-color: var(--gold);
-                box-shadow: 0 0 8px var(--gold-glow);
-            }
-
         /* ==========================================================================
-           4. PRINCIPAL LAYOUT
+           3. DISTRIBUCIÓN PRINCIPAL (LAYOUT)
            ========================================================================== */
         main {
             flex: 1;
             display: grid;
-            grid-template-columns: 380px 1fr;
+            grid-template-columns: 360px 1fr;
             width: 100%;
             max-width: 1800px;
             margin: 0 auto;
-            align-items: start;
         }
 
-        /* ==========================================================================
-           5. SIDEBAR CONTROL PANEL
-           ========================================================================== */
+        /* Panel de Control Izquierdo (Sidebar) */
         .panel {
             position: sticky;
             top: 64px;
@@ -241,15 +222,15 @@
             flex-direction: column;
             gap: 20px;
             padding: 24px;
-            background: rgba(18, 25, 19, 0.6);
+            background: rgba(18, 25, 19, 0.4);
             border-right: 1px solid var(--border);
         }
 
-        /* UX Step-by-Step Component */
+        /* Componente de Pasos UX Solicitado */
         .visual-steps {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             background: var(--surface);
             padding: 12px;
             border-radius: var(--radius);
@@ -259,8 +240,8 @@
         .step-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 0.78rem;
+            gap: 8px;
+            font-size: 0.75rem;
             font-weight: 600;
             color: var(--text-dim);
             text-transform: uppercase;
@@ -268,15 +249,15 @@
         }
 
         .step-num {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
             background: var(--surface-elevated);
             border: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-muted);
         }
 
@@ -287,10 +268,10 @@
             .step-item.active .step-num {
                 background: var(--gold-dim);
                 border-color: var(--gold);
-                color: var(--bg);
+                color: var(--bg-main);
             }
 
-        /* Formulario y Controles */
+        /* Controles, Inputs e Inputs de Bloque */
         .control-group {
             display: flex;
             flex-direction: column;
@@ -300,21 +281,20 @@
         .field-label {
             font-size: 0.75rem;
             font-weight: 700;
-            letter-spacing: 0.06em;
             color: var(--text-muted);
             text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         textarea {
             width: 100%;
-            height: 160px;
+            height: 140px;
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            color: var(--text);
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            color: var(--text-main);
+            font-family: monospace;
             font-size: 0.85rem;
-            line-height: 1.6;
             padding: 12px;
             resize: vertical;
             outline: none;
@@ -332,17 +312,16 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            color: var(--text);
-            font-family: inherit;
-            font-size: 0.9rem;
-            padding: 10px 36px 10px 12px;
+            color: var(--text-main);
+            font-size: 0.88rem;
+            padding: 10px 12px;
             outline: none;
             cursor: pointer;
             transition: var(--transition);
             appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238fa393' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238fa393' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
-            background-position: right 14px center;
+            background-position: right 12px center;
         }
 
             select:focus {
@@ -350,7 +329,7 @@
                 box-shadow: 0 0 0 3px var(--gold-glow);
             }
 
-        /* Grid de Opciones Avanzadas de Impresión */
+        /* Grid de Configuración Avanzada de PDF */
         .pdf-options-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -378,21 +357,20 @@
             }
 
         .hint {
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             color: var(--text-dim);
             line-height: 1.4;
         }
 
-        /* Stats HUD Premium */
+        /* HUD de Estadísticas Métricas */
         .stats {
-            background: linear-gradient(to bottom, var(--surface), var(--bg-alt));
+            background: linear-gradient(to bottom, var(--surface), var(--bg-main));
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 12px;
+            padding: 10px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 4px;
-            box-shadow: var(--shadow-sm);
         }
 
         .stat-block {
@@ -406,28 +384,27 @@
 
         .stat-val {
             font-family: 'Cinzel', serif;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             color: var(--gold);
             font-weight: 700;
         }
 
         .stat-lbl {
-            font-size: 0.62rem;
+            font-size: 0.6rem;
             color: var(--text-dim);
             text-transform: uppercase;
             font-weight: 700;
-            letter-spacing: 0.05em;
         }
 
-        /* Mensajes Logs & Feedback */
+        /* Feedback y Logs Activos */
         #log {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 10px 14px;
-            font-size: 0.82rem;
+            padding: 10px 12px;
+            font-size: 0.8rem;
             color: var(--text-muted);
-            min-height: 40px;
+            min-height: 38px;
             display: flex;
             align-items: center;
             transition: var(--transition);
@@ -456,19 +433,18 @@
             height: 100%;
             width: 0%;
             background: linear-gradient(90deg, var(--green-mana) 0%, var(--gold) 100%);
-            transition: width 0.3s ease;
+            transition: width 0.2s ease;
         }
 
-        /* Botones de Acción Principal */
+        /* Botones Principales y Acciones */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            font-family: 'Inter', sans-serif;
+            gap: 8px;
             font-size: 0.85rem;
             font-weight: 600;
-            padding: 12px 20px;
+            padding: 12px 16px;
             border-radius: var(--radius);
             border: none;
             cursor: pointer;
@@ -485,41 +461,39 @@
             .btn-primary:hover:not(:disabled) {
                 background: var(--green-mana-hover);
                 transform: translateY(-1px);
-                box-shadow: 0 6px 20px var(--green-mana-glow);
+                box-shadow: 0 6px 16px var(--green-mana-glow);
             }
 
             .btn-primary:disabled {
-                opacity: 0.25;
+                opacity: 0.3;
                 cursor: not-allowed;
-                transform: none;
             }
 
         .btn-gold {
             background: linear-gradient(to bottom, var(--gold), var(--gold-dim));
-            color: var(--bg);
-            box-shadow: 0 4px 12px var(--gold-glow);
+            color: var(--bg-main);
             font-weight: 700;
+            box-shadow: 0 4px 12px var(--gold-glow);
         }
 
             .btn-gold:hover:not(:disabled) {
                 filter: brightness(1.1);
                 transform: translateY(-1px);
-                box-shadow: 0 6px 20px var(--gold-glow);
+                box-shadow: 0 6px 16px var(--gold-glow);
             }
 
             .btn-gold:disabled {
-                opacity: 0.15;
+                opacity: 0.2;
                 cursor: not-allowed;
-                transform: none;
             }
 
         /* ==========================================================================
-           6. PREVIEW CANVAS (ZONA CENTRAL DERECHA)
+           4. ÁREA DE PREVISUALIZACIÓN DE CARTAS (WORKSPACE)
            ========================================================================== */
         .preview-wrap {
             padding: 32px;
+            background: rgba(11, 16, 12, 0.2);
             min-height: calc(100vh - 64px);
-            background: rgba(11, 16, 12, 0.4);
         }
 
         .preview-surface {
@@ -534,33 +508,33 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
             border-bottom: 1px solid var(--border);
         }
 
         .preview-title {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
-            letter-spacing: 0.08em;
             color: var(--text-muted);
             text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
 
-        /* Grid de Cartas Optimizado */
+        /* Rejilla de Cartas Optimizada con Tamaño Premium Mínimo */
         #preview-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
             gap: 24px;
         }
 
-        /* Carta de MTG Individual */
+        /* Contenedores de Cartas con Relación de Aspecto MTG (63x88) */
         .card-thumb {
             position: relative;
-            border-radius: 4.75% / 3.5%; /* Ratio nativo bordes MTG */
+            border-radius: 4.75% / 3.5%;
             overflow: hidden;
             aspect-ratio: 63/88;
-            background: var(--bg-alt);
+            background: var(--bg-main);
             border: 1px solid var(--border);
             cursor: pointer;
             transition: var(--transition);
@@ -568,10 +542,10 @@
         }
 
             .card-thumb:hover {
-                transform: translateY(-6px) scale(1.02);
+                transform: translateY(-4px) scale(1.01);
                 border-color: var(--gold);
-                box-shadow: var(--shadow-lg), 0 0 15px var(--gold-glow);
-                z-index: 10;
+                box-shadow: var(--shadow-lg), 0 0 12px var(--gold-glow);
+                z-index: 5;
             }
 
             .card-thumb img {
@@ -581,11 +555,11 @@
                 display: block;
             }
 
-        /* Overlay de Información en Hover */
+        /* Capas Superpuestas con Información de las Cartas */
         .card-meta-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.9) 100%);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.85) 100%);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -593,35 +567,33 @@
             opacity: 0;
             transition: opacity 0.2s ease;
             pointer-events: none;
-            z-index: 2;
         }
 
         .card-thumb:hover .card-meta-overlay {
             opacity: 1;
         }
 
-        .card-info-top {
+        .card-info-top, .card-info-bottom {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: flex-start;
             pointer-events: auto;
         }
 
         .card-info-bottom {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            pointer-events: auto;
+            align-items: flex-end;
+            gap: 4px;
         }
 
         .card-title-text {
             font-size: 0.85rem;
             font-weight: 700;
             color: #fff;
-            text-shadow: 0 1px 4px #000;
+            text-shadow: 0 1px 3px #000;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            max-width: 75%;
         }
 
         .card-set-text {
@@ -631,59 +603,54 @@
             text-transform: uppercase;
         }
 
-        /* Badges de Estado */
         .card-badge-ui {
-            background: rgba(15, 23, 15, 0.85);
-            backdrop-filter: blur(4px);
+            background: rgba(15, 23, 15, 0.9);
             color: var(--gold);
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 700;
             border-radius: 4px;
-            padding: 2px 8px;
+            padding: 1px 6px;
             border: 1px solid var(--gold-dim);
-            line-height: 1.4;
         }
 
         .card-remove-btn {
             background: #e11d48;
             color: #fff;
             border: none;
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             border-radius: 4px;
             font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: var(--shadow-sm);
         }
 
         .qty-input {
-            width: 48px;
+            width: 44px;
             background: #000;
             color: var(--gold);
-            font-family: inherit;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 700;
             border: 1px solid var(--gold);
             border-radius: 4px;
-            padding: 2px 4px;
+            padding: 1px;
             text-align: center;
             outline: none;
         }
 
-        /* SKELETON LOADING ANIMADO */
+        /* Skeleton Loader Animado Solicitado */
         .skeleton-card {
             aspect-ratio: 63/88;
-            background: linear-gradient(90deg, var(--surface) 25%, var(--surface-elevated) 50%, var(--surface) 75%);
-            background-size: 200% 100%;
-            animation: loading-skeleton 1.5s infinite;
             border-radius: 4.75% / 3.5%;
             border: 1px solid var(--border);
+            background: linear-gradient(90deg, var(--surface) 25%, var(--surface-elevated) 50%, var(--surface) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-wave 1.5s infinite linear;
         }
 
-        @keyframes loading-skeleton {
+        @keyframes skeleton-wave {
             0% {
                 background-position: 200% 0;
             }
@@ -693,29 +660,23 @@
             }
         }
 
-        /* Estado Vacío */
+        /* Estados Vacíos */
         .empty-state {
             grid-column: 1/-1;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
-            gap: 16px;
-            height: 340px;
+            gap: 12px;
+            height: 300px;
             color: var(--text-dim);
             border: 2px dashed var(--border);
             border-radius: var(--radius-lg);
             font-style: italic;
         }
 
-        .empty-state-icon {
-            font-size: 2.5rem;
-            filter: grayscale(1);
-            opacity: 0.4;
-        }
-
         /* ==========================================================================
-           7. MODAL DE SELECCIÓN DE ARTE PREMIUM
+           5. MODAL DE ARTE Y VENTANAS EMERGENTES (REDISEÑO PREMIUM)
            ========================================================================== */
         .modal-overlay {
             position: fixed;
@@ -742,65 +703,57 @@
             background: var(--surface);
             border: 1px solid var(--border-glow);
             border-radius: var(--radius-lg);
-            width: min(1100px, 100%);
+            width: min(1000px, 100%);
             max-height: 85vh;
             display: flex;
             flex-direction: column;
-            transform: scale(0.96) translateY(10px);
+            transform: scale(0.97);
             transition: var(--transition);
             overflow: hidden;
             box-shadow: var(--shadow-lg);
         }
 
         .modal-overlay.open .modal {
-            transform: scale(1) translateY(0);
+            transform: scale(1);
         }
 
         .modal-header {
-            padding: 20px 24px;
+            padding: 18px 24px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: var(--bg-alt);
+            background: var(--bg-main);
         }
 
         .modal-title {
             font-family: 'Cinzel', serif;
-            font-size: 0.8rem;
-            letter-spacing: 0.1em;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
             color: var(--gold);
             text-transform: uppercase;
         }
 
         .modal-card-name {
-            font-size: 1.25rem;
-            font-weight: 400;
-            color: var(--text);
+            font-size: 1.2rem;
+            color: var(--text-main);
             margin-top: 2px;
         }
 
         .modal-controls {
-            padding: 14px 24px;
+            padding: 12px 24px;
             display: flex;
             align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
+            gap: 12px;
             border-bottom: 1px solid var(--border);
             background: var(--surface-elevated);
+            font-size: 0.8rem;
         }
-
-            .modal-controls label {
-                font-size: 0.72rem;
-                font-weight: 700;
-                color: var(--text-muted);
-                text-transform: uppercase;
-            }
 
         .modal-lang-select {
             width: auto;
-            padding: 6px 32px 6px 12px;
-            font-size: 0.85rem;
+            padding: 4px 28px 4px 10px;
+            font-size: 0.8rem;
             border-radius: var(--radius-sm);
         }
 
@@ -808,16 +761,16 @@
             padding: 24px;
             overflow-y: auto;
             flex: 1;
-            background: var(--bg);
+            background: var(--bg-main);
         }
 
-        /* Grid de Impresiones */
         .prints-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 20px;
         }
 
+        /* Cromos/Variantes de Impresión en el Catálogo */
         .print-card {
             border-radius: var(--radius);
             border: 1px solid var(--border);
@@ -825,7 +778,6 @@
             cursor: pointer;
             transition: var(--transition);
             background: var(--surface);
-            box-shadow: var(--shadow-sm);
             display: flex;
             flex-direction: column;
             position: relative;
@@ -833,8 +785,7 @@
 
             .print-card:hover {
                 border-color: var(--gold-dim);
-                transform: translateY(-4px);
-                box-shadow: var(--shadow-md);
+                transform: translateY(-3px);
             }
 
             .print-card.selected {
@@ -845,59 +796,55 @@
 
             .print-card img {
                 width: 100%;
-                display: block;
                 aspect-ratio: 63/88;
                 object-fit: cover;
-                background: var(--bg-alt);
+                display: block;
+                background: var(--surface-elevated);
             }
 
         .print-meta {
-            padding: 10px;
+            padding: 8px;
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            gap: 4px;
+            gap: 2px;
         }
 
             .print-meta .set-name {
-                font-size: 0.8rem;
+                font-size: 0.78rem;
                 font-weight: 600;
-                color: var(--text);
+                color: var(--text-main);
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
 
             .print-meta .set-detail {
-                font-size: 0.7rem;
+                font-size: 0.68rem;
                 color: var(--text-dim);
                 text-transform: uppercase;
-                font-weight: 500;
             }
 
-        /* Badges de rareza y acabado dentro de la impresión */
         .print-badge {
             position: absolute;
             top: 6px;
             right: 6px;
-            background: rgba(0,0,0,0.75);
-            color: #fff;
+            background: rgba(0,0,0,0.8);
+            color: var(--gold);
             font-size: 0.6rem;
-            padding: 2px 6px;
+            padding: 1px 4px;
             border-radius: 3px;
-            text-transform: uppercase;
             font-weight: 700;
+            text-transform: uppercase;
         }
 
-        /* ==========================================================================
-           8. OVERLAYS DE ACCIÓN GLOBAL Y SYSTEM GENERALS
-           ========================================================================== */
+        /* Overlays Globales de Operaciones en Progreso */
         .loading-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(5, 8, 6, 0.8);
+            background: rgba(5, 8, 6, 0.75);
             backdrop-filter: blur(4px);
             z-index: 1500;
             align-items: center;
@@ -912,54 +859,45 @@
             background: var(--surface);
             border: 1px solid var(--border-glow);
             border-radius: var(--radius-lg);
-            padding: 32px 48px;
+            padding: 24px 40px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             box-shadow: var(--shadow-lg);
             text-align: center;
         }
 
         .spinner-ring {
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border: 3px solid var(--border);
             border-top-color: var(--gold);
             border-radius: 50%;
-            animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            animation: spin-loader 0.7s infinite linear;
         }
 
-        @keyframes spin {
+        @keyframes spin-loader {
             to {
                 transform: rotate(360deg);
             }
         }
 
-        /* Footer */
         footer {
             border-top: 1px solid var(--border);
             padding: 16px;
             text-align: center;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             color: var(--text-dim);
-            background: var(--bg-alt);
+            background: rgba(18,25,19,0.5);
         }
 
             footer a {
                 color: var(--gold);
                 text-decoration: none;
-                font-weight: 500;
             }
 
-                footer a:hover {
-                    text-decoration: underline;
-                }
-
-        /* ==========================================================================
-           9. RESPONSIVE DESIGN
-           ========================================================================== */
-        @media (max-width: 960px) {
+        @media (max-width: 900px) {
             main {
                 grid-template-columns: 1fr;
             }
@@ -969,16 +907,6 @@
                 height: auto;
                 border-right: none;
                 border-bottom: 1px solid var(--border);
-                padding: 16px;
-            }
-
-            .preview-wrap {
-                padding: 16px;
-            }
-
-            #preview-grid {
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-                gap: 16px;
             }
         }
     </style>
@@ -989,39 +917,35 @@
         <div class="modal">
             <div class="modal-header">
                 <div>
-                    <div class="modal-title">Catálogo de Impresiones</div>
+                    <div class="modal-title">Variantes de Impresión</div>
                     <div class="modal-card-name" id="modal-card-name">—</div>
                 </div>
                 <button class="header-btn" onclick="closeModal()">✕</button>
             </div>
             <div class="modal-controls">
-                <label for="modal-lang">Localización:</label>
+                <label for="modal-lang">Idioma:</label>
                 <select class="modal-lang-select" id="modal-lang" onchange="onModalLangChange()">
-                    <option value="en">🇬🇧 English</option>
-                    <option value="es">🇪🇸 Español</option>
-                    <option value="fr">🇫🇷 Français</option>
-                    <option value="de">🇩🇪 Deutsch</option>
-                    <option value="it">🇮🇹 Italiano</option>
-                    <option value="pt">🇧🇷 Português</option>
-                    <option value="ja">🇯🇵 日本語</option>
-                    <option value="ko">🇰🇷 한국어</option>
-                    <option value="ru">🇷🇺 Русский</option>
-                    <option value="zhs">🇨🇳 中文简体</option>
-                    <option value="zht">🇹🇼 中文繁體</option>
-                    <option value="ph">☣ Phyrexian</option>
+                    <option value="en">🇬🇧 EN</option>
+                    <option value="es">🇪🇸 ES</option>
+                    <option value="fr">🇫🇷 FR</option>
+                    <option value="de">🇩🇪 DE</option>
+                    <option value="it">🇮🇹 IT</option>
+                    <option value="pt">🇧🇷 PT</option>
+                    <option value="ja">🇯🇵 JA</option>
+                    <option value="ko">🇰🇷 KO</option>
+                    <option value="ru">🇷🇺 RU</option>
+                    <option value="zhs">🇨🇳 ZHS</option>
+                    <option value="zht">🇹🇼 ZHT</option>
+                    <option value="ph">☣ PH</option>
                 </select>
-                <div class="modal-count" id="modal-print-count" style="margin-left:auto; font-size:0.8rem; color:var(--text-muted)"></div>
+                <div id="modal-print-count" style="margin-left: auto; color: var(--text-muted); font-weight: 500;"></div>
             </div>
             <div class="modal-body">
-                <div class="prints-grid" id="prints-grid">
-                    <div class="prints-loading" style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">
-                        <div class="spinner-ring" style="margin:0 auto 12px;"></div> Consultando Scryfall...
-                    </div>
-                </div>
+                <div class="prints-grid" id="prints-grid"></div>
             </div>
-            <div class="modal-footer" style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; background:var(--bg-alt);">
-                <button class="header-btn" onclick="closeModal()">Cancelar</button>
-                <button class="btn btn-gold" id="btn-apply" onclick="applySelection()" style="width:auto; padding:8px 24px;" disabled>Confirmar Arte</button>
+            <div style="padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: var(--bg-main);">
+                <button class="header-btn" onclick="closeModal()">Cerrar</button>
+                <button class="btn btn-gold" id="btn-apply" onclick="applySelection()" style="width: auto; padding: 6px 20px;" disabled>Aplicar Cambios</button>
             </div>
         </div>
     </div>
@@ -1034,8 +958,6 @@
             </div>
         </div>
         <div class="header-actions">
-            <button class="header-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg> Importar</button>
-            <button class="header-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg></button>
             <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">
                 <span id="theme-icon">🌙</span> <span id="theme-label">Oscuro</span>
             </button>
@@ -1045,21 +967,21 @@
     <main>
         <div class="panel">
             <div class="visual-steps">
-                <div class="step-item active" id="step-1"><span class="step-num">1</span> Paste Decklist</div>
-                <div class="step-item" id="step-2"><span class="step-num">2</span> Load Cards</div>
-                <div class="step-item" id="step-3"><span class="step-num">3</span> Customize Arts</div>
-                <div class="step-item" id="step-4"><span class="step-num">4</span> Build PDF</div>
+                <div class="step-item active" id="step-1"><span class="step-num">1</span> Pegar Listado</div>
+                <div class="step-item" id="step-2"><span class="step-num">2</span> Cargar Datos</div>
+                <div class="step-item" id="step-3"><span class="step-num">3</span> Modificar Arte</div>
+                <div class="step-item" id="step-4"><span class="step-num">4</span> Descargar PDF</div>
             </div>
 
             <div class="control-group">
-                <label class="field-label">Listado del Mazo (Formato Arena / MTGO)</label>
-                <textarea id="deck-input" placeholder="4 Lightning Bolt&#10;4 Monastery Swiftspear&#10;1 Sol Ring&#10;..."></textarea>
+                <label class="field-label" for="deck-input">Listado de Cartas</label>
+                <textarea id="deck-input" placeholder="4 Lightning Bolt&#10;1 Sol Ring&#10;2 Thassa's Oracle..."></textarea>
             </div>
 
             <div class="control-group">
-                <label class="field-label" for="global-lang">Idioma de Búsqueda Principal</label>
+                <label class="field-label" for="global-lang">Idioma Scryfall por Defecto</label>
                 <select id="global-lang">
-                    <option value="en">🇬🇧 English (Recomendado)</option>
+                    <option value="en">🇬🇧 English</option>
                     <option value="es">🇪🇸 Español</option>
                     <option value="fr">🇫🇷 Français</option>
                     <option value="de">🇩🇪 Deutsch</option>
@@ -1068,60 +990,38 @@
                     <option value="ja">🇯🇵 日本語</option>
                     <option value="ko">🇰🇷 한국어</option>
                     <option value="ru">🇷🇺 Русский</option>
-                    <option value="zhs">🇨🇳 中文简体</option>
-                    <option value="zht">🇹🇼 中文繁體</option>
+                    <option value="zhs">🇨🇳 中文 S</option>
+                    <option value="zht">🇹🇼 中文 T</option>
                     <option value="ph">☣ Phyrexian</option>
                 </select>
             </div>
 
             <div class="control-group">
-                <label class="field-label">Configuración del PDF de Impresión</label>
+                <label class="field-label">Configuración del Archivo PDF</label>
                 <div class="pdf-options-grid">
-                    <div class="pdf-opt-label">
-                        Escala
-                        <select id="pdf-size"><option value="real">Tamaño Real (100%)</option><option value="fit">Ajustar página</option></select>
-                    </div>
-                    <div class="pdf-opt-label">
-                        Sangrado
-                        <select id="pdf-bleed"><option value="none">Sin Sangrado</option><option value="mm2">2mm Profesional</option></select>
-                    </div>
-                    <div class="pdf-opt-label">
-                        Cartas DFC
-                        <select id="pdf-dfc"><option value="both">Ambas Caras</option><option value="checklist">Solo Frente</option></select>
-                    </div>
-                    <div class="pdf-opt-label">
-                        Guías de Corte
-                        <select id="pdf-marks"><option value="yes">Líneas finas</option><option value="no">Sin marcas</option></select>
-                    </div>
-                    <div class="pdf-opt-label">
-                        Muestreo (DPI)
-                        <select id="pdf-quality"><option value="high">300 DPI High-Res</option><option value="std">150 DPI Fast</option></select>
-                    </div>
-                    <div class="pdf-opt-label">
-                        Papel
-                        <select id="pdf-paper"><option value="a4">A4 Estándar</option><option value="letter">Letter / Carta</option></select>
-                    </div>
+                    <div class="pdf-opt-label">Escala <select id="pdf-size"><option value="real">Tamaño Real (100%)</option><option value="fit">Ajustar Página</option></select></div>
+                    <div class="pdf-opt-label">Sangrado <select id="pdf-bleed"><option value="none">Sin Margen</option><option value="mm2">2mm Pro</option></select></div>
+                    <div class="pdf-opt-label">Doble Cara <select id="pdf-dfc"><option value="both">Ambas Caras</option><option value="checklist">Solo Frente</option></select></div>
+                    <div class="pdf-opt-label">Guías Corte <select id="pdf-marks"><option value="yes">Líneas Finas</option><option value="no">Sin Líneas</option></select></div>
+                    <div class="pdf-opt-label">Muestreo <select id="pdf-quality"><option value="high">300 DPI HQ</option><option value="std">150 DPI Fast</option></select></div>
+                    <div class="pdf-opt-label">Papel <select id="pdf-paper"><option value="a4">A4</option><option value="letter">Carta (Letter)</option></select></div>
                 </div>
             </div>
 
             <div class="stats">
                 <div class="stat-block"><div class="stat-val" id="stat-unique">0</div><div class="stat-lbl">Únicas</div></div>
-                <div class="stat-block"><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
+                <div class="stat-block"><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Totales</div></div>
                 <div class="stat-block"><div class="stat-val" id="stat-pages">0</div><div class="stat-lbl">Páginas</div></div>
             </div>
 
-            <div class="control-group" style="gap:10px;">
+            <div class="control-group" style="gap: 8px;">
                 <div class="progress-wrap"><div id="progress-bar"></div></div>
-                <div id="log">Introduce una lista estructurada para inicializar la forja.</div>
+                <div id="log">Introduce cartas en la caja de control superior.</div>
             </div>
 
-            <div style="display:flex; flex-direction:column; gap:12px; margin-top:auto;">
-                <button class="btn btn-primary" id="btn-load" onclick="loadDeck()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" /></svg> Sincronizar Cartas
-                </button>
-                <button class="btn btn-gold" id="btn-pdf" onclick="generatePDF()" disabled>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg> Generar Archivo de Forja
-                </button>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: auto;">
+                <button class="btn btn-primary" id="btn-load" onclick="loadDeck()">Cargar Listado Scryfall</button>
+                <button class="btn btn-gold" id="btn-pdf" onclick="generatePDF()" disabled>Compilar Documento de Impresión</button>
             </div>
         </div>
 
@@ -1129,22 +1029,18 @@
             <div class="loading-overlay" id="loading-overlay">
                 <div class="loading-card">
                     <div class="spinner-ring"></div>
-                    <div class="modal-title" style="margin-top:8px;">Procesando Datos</div>
-                    <div class="loading-text" id="loading-text" style="font-size:0.85rem; color:var(--text-muted); font-style:italic;">Indexando elementos multimedia...</div>
-                    <div class="progress-wrap" style="width:160px; margin-top:4px;"><div class="loading-prog-bar" id="loading-prog-bar" style="height:100%; width:0%; background:var(--gold); transition:width 0.2s;"></div></div>
+                    <div id="loading-text" style="font-size: 0.85rem; color: var(--text-muted);">Procesando datos del mazo...</div>
+                    <div class="progress-wrap" style="width: 140px; margin-top: 4px;"><div id="loading-prog-bar" style="height: 100%; width: 0%; background: var(--gold); transition: width 0.1s;"></div></div>
                 </div>
             </div>
 
             <div class="preview-surface">
                 <div class="preview-header">
-                    <span class="preview-title">Mesa de trabajo y composición</span>
-                    <span class="preview-title" id="preview-count" style="color:var(--gold); font-weight:700;"></span>
+                    <span class="preview-title">Mesa de Maquetación Activa</span>
+                    <span id="preview-count" style="font-size: 0.78rem; font-weight: 700; color: var(--gold);"></span>
                 </div>
                 <div id="preview-grid">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🃏</div>
-                        <span style="font-size:0.9rem;">El estudio está listo. Importa un mazo competitivo para previsualizar los assets.</span>
-                    </div>
+                    <div class="empty-state">No hay assets cargados en memoria.</div>
                 </div>
             </div>
         </div>
@@ -1153,125 +1049,190 @@
     <footer>Estructura multimedia servida vía <a href="https://scryfall.com" target="_blank">Scryfall Engine</a>. Studio de uso personal y testeo de barajas.</footer>
 
     <script>
-        const LANG_NAMES = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', it: 'IT', pt: 'PT', ja: 'JA', ko: 'KO', ru: 'RU', zhs: 'ZHS', zht: 'ZHT', ph: 'PH' };
+        // --- CONSTANTES Y CACHES GLOBALES ---
+        const LANG_NAMES = {
+            en: 'EN', es: 'ES', fr: 'FR', de: 'DE', it: 'IT',
+            pt: 'PT', ja: 'JA', ko: 'KO', ru: 'RU', zhs: 'ZHS',
+            zht: 'ZHT', ph: 'PH'
+        };
         const imageBlobCache = new Map();
-        const state = { cards: [], loading: false, printsCache: {}, abortController: null, langCache: {} };
-        const modal = { cardIndex: -1, selectedPrintId: null, prints: [], currentLang: 'en' };
 
-        function getGlobalLang() { return document.getElementById('global-lang').value }
+        // --- ESTADO GLOBAL DE LA APLICACIÓN ---
+        const state = {
+            cards: [],
+            loading: false,
+            printsCache: {},
+            abortController: null,
+            langCache: {}
+        };
 
+        // --- ESTADO DEL MODAL DE SELECCIÓN DE ARTE ---
+        const modal = {
+            cardIndex: -1,
+            selectedPrintId: null,
+            prints: [],
+            currentLang: 'en'
+        };
+
+        // --- HELPER DE CONFIGURACIÓN ---
+        function getGlobalLang() {
+            return document.getElementById('global-lang').value;
+        }
+
+        // --- MANEJO DE LOGS Y PROGRESO ---
         function setLog(msg, type = '') {
-            const el = document.getElementById('log');
-            el.textContent = msg;
-            el.className = type;
-
-            // Sincronizar Pasos UX según estado del log
-            if (type === 'error') {
-                document.getElementById('step-2').classList.remove('active');
-            }
+            const logEl = document.getElementById('log');
+            if (!logEl) return;
+            logEl.textContent = msg;
+            logEl.className = type; // '', 'error', 'ok'
         }
 
         function setProgress(pct) {
-            document.getElementById('progress-bar').style.width = pct + '%';
-            const pb = document.getElementById('loading-prog-bar');
+            const pb = document.getElementById('progress-bar');
             if (pb) pb.style.width = pct + '%';
+
+            const lpb = document.getElementById('loading-prog-bar');
+            if (lpb) lpb.style.width = pct + '%';
         }
 
         function updateStats(cards) {
-            const unique = cards.length;
-            const total = cards.reduce((s, c) => s + (c.qty || 0), 0);
-            const pages = total ? Math.ceil(total / 9) : 0;
-            document.getElementById('stat-unique').textContent = unique;
-            document.getElementById('stat-total').textContent = total;
-            document.getElementById('stat-pages').textContent = pages;
-            document.getElementById('preview-count').textContent = total > 0 ? `${total} ASSETS · ${pages} PÁG.` : '';
+            let uniqueCount = cards.length;
+            let totalCount = cards.reduce((sum, c) => sum + (c.qty || 0), 0);
+            let totalPages = Math.ceil(totalCount / 9);
 
-            // Avanzar pasos visuales automáticamente
-            if (unique > 0) {
-                document.getElementById('step-1').classList.add('active');
-                document.getElementById('step-2').classList.add('active');
-            } else {
-                document.getElementById('step-2').classList.remove('active');
-                document.getElementById('step-3').classList.remove('active');
-                document.getElementById('step-4').classList.remove('active');
+            document.getElementById('stat-unique').textContent = uniqueCount;
+            document.getElementById('stat-total').textContent = totalCount;
+            document.getElementById('stat-pages').textContent = totalPages;
+
+            const lbl = document.getElementById('preview-count');
+            if (lbl) {
+                lbl.textContent = totalCount > 0 ? `${totalCount} cartas (${totalPages} pág.)` : '';
             }
         }
 
+        // --- UTILS PARA NORMALIZACIÓN Y PARSEO (ESTILO SCRYFALL) ---
         function normalizeCardName(name) {
-            return String(name).normalize('NFKD').replace(/[''`´]/g, "'").replace(/[\u2010-\u2015\u2212]/g, "-").replace(/\s*\/\/\s*/g, " // ").replace(/\s+/g, " ").trim().toLowerCase();
+            return String(name)
+                .normalize('NFKD')
+                .replace(/[''`´]/g, "'")
+                .replace(/[\u2010-\u2015\u2212]/g, "-")
+                .replace(/\s*\/\/\s*/g, " // ")
+                .replace(/\s+/g, " ")
+                .trim()
+                .toLowerCase();
         }
 
         function parseArena(text) {
+            const lines = text.split('\n');
             const result = [];
-            for (const raw of text.split('\n')) {
-                let line = raw.trim();
-                if (!line || /^(Deck|Sideboard|Commander|Companion|About)$/i.test(line)) continue;
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                if (/^(Deck|Sideboard|Commander|Companion|About)$/i.test(line)) continue;
+
+                // Limpiar sufijos comunes de set/colector ej: (VOW) 243
                 line = line.replace(/\s+\([A-Z0-9]+\)\s*\d*$/i, '').trim();
-                const m = line.match(/^(\d+)[xX]?\s+(.+?)\s*$/);
+
+                const match = line.match(/^(\d+)[xX]?\s+(.+?)\s*$/);
                 let qty, name;
-                if (m) { qty = parseInt(m[1], 10); name = m[2].trim(); } else if (line.length > 1) { qty = 1; name = line; } else continue;
+
+                if (match) {
+                    qty = parseInt(match[1], 10);
+                    name = match[2].trim();
+                } else if (line.length > 1) {
+                    qty = 1;
+                    name = line;
+                } else {
+                    continue;
+                }
+
+                // Normalizar nombres partidos "//"
                 name = name.replace(/\s+\/\/\s+/g, ' // ').replace(/\s+\/\s+/g, ' // ');
+                // Si es partida, nos quedamos con la primera cara para la consulta base en Scryfall
                 name = name.split(' // ')[0].trim();
-                if (qty > 0 && name) result.push({ qty, name });
+
+                if (qty > 0 && name) {
+                    result.push({ qty, name });
+                }
             }
             return result;
         }
 
         function hasValidImage(card) {
             if (!card) return false;
-            const s = card.image_status;
-            if (s === 'placeholder' || s === 'missing') return false;
+            if (card.image_status === 'placeholder' || card.image_status === 'missing') return false;
             return !!extractImageUrl(card);
         }
 
+        // --- PETICIONES BATCH API SCRYFALL ---
         async function fetchCollectionBatch(names) {
-            const cleaned = names.map(n => String(n).trim()).filter(Boolean);
-            const body = JSON.stringify({ identifiers: cleaned.map(name => ({ name })) });
-            const res = await fetchWithRetry('https://api.scryfall.com/cards/collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-            if (!res || !res.ok) throw new Error('Error en batch collection');
+            const cleanNames = names.map(n => String(n).trim()).filter(Boolean);
+            const body = JSON.stringify({ identifiers: cleanNames.map(name => ({ name })) });
+
+            const res = await fetchWithRetry('https://api.scryfall.com/cards/collection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body
+            });
+
+            if (!res || !res.ok) throw new Error('Error en la llamada batch a Scryfall collection');
             const data = await res.json();
-            const map = new Map();
+
+            const cardMap = new Map();
             for (const card of (data.data || [])) {
                 const fullKey = normalizeCardName(card.name);
-                map.set(fullKey, card);
+                cardMap.set(fullKey, card);
                 if (card.name.includes(' // ')) {
                     const firstFaceKey = normalizeCardName(card.name.split(' // ')[0].trim());
-                    map.set(firstFaceKey, card);
+                    cardMap.set(firstFaceKey, card);
                 }
             }
-            return { map };
+            return { map: cardMap };
         }
 
         async function fetchCardLangBatch(names, lang, signal) {
-            const orParts = names.map(n => '!"' + n + '"').join(' OR ');
-            const q = '(' + orParts + ') lang:' + lang;
-            const url = 'https://api.scryfall.com/cards/search?q=' + encodeURIComponent(q) + '&unique=cards&order=released&dir=desc';
+            const orParts = names.map(n => `!"${n}"`).join(' OR ');
+            const q = `(${orParts}) lang:${lang}`;
+            const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(q)}&unique=cards&order=released&dir=desc`;
+
             const res = await fetchWithRetry(url, signal ? { signal } : {});
-            const result = new Map();
-            if (!res || !res.ok) return result;
+            const resultGridMap = new Map();
+
+            if (!res || !res.ok) return resultGridMap;
             const data = await res.json();
-            const nameSet = new Map(names.map(n => [normalizeCardName(n), n]));
+
+            const originSet = new Map(names.map(n => [normalizeCardName(n), n]));
+
             for (const card of (data.data || [])) {
                 if (!hasValidImage(card)) continue;
-                const normCardEN = normalizeCardName(card.name);
+                const normFull = normalizeCardName(card.name);
                 const normFace1 = normalizeCardName(card.name.split(' // ')[0]);
-                let matchKey = null;
-                if (nameSet.has(normCardEN)) matchKey = normCardEN;
-                else if (nameSet.has(normFace1)) matchKey = normFace1;
-                if (matchKey && !result.has(matchKey)) { result.set(matchKey, card); }
+
+                let matchedKey = null;
+                if (originSet.has(normFull)) matchedKey = normFull;
+                else if (originSet.has(normFace1)) matchedKey = normFace1;
+
+                if (matchedKey && !resultGridMap.has(matchedKey)) {
+                    resultGridMap.set(matchedKey, card);
+                }
             }
-            return result;
+            return resultGridMap;
         }
 
         async function fetchCardLang(name, lang, signal) {
-            const map = await fetchCardLangBatch([name], lang, signal);
-            return map.get(normalizeCardName(name)) || null;
+            const m = await fetchCardLangBatch([name], lang, signal);
+            return m.get(normalizeCardName(name)) || null;
         }
 
         async function fetchWithRetry(url, options = {}, retries = 2) {
             for (let i = 0; i <= retries; i++) {
-                try { return await fetch(url, options); }
-                catch (err) { if (i === retries) throw err; await new Promise(r => setTimeout(r, 400)); }
+                try {
+                    return await fetch(url, options);
+                } catch (err) {
+                    if (i === retries) throw err;
+                    await new Promise(r => setTimeout(r, 400));
+                }
             }
         }
 
@@ -1288,25 +1249,14 @@
             return card && card.card_faces && card.card_faces[1] && card.card_faces[0].image_uris === undefined;
         }
 
-        function showLoadingOverlay(msg) {
-            const ov = document.getElementById('loading-overlay');
-            const tx = document.getElementById('loading-text');
-            if (ov) ov.classList.add('active');
-            if (tx && msg) tx.textContent = msg;
-        }
-
-        function hideLoadingOverlay() {
-            const ov = document.getElementById('loading-overlay');
-            if (ov) ov.classList.remove('active');
-            setProgress(0);
-        }
-
-        // Renderizado Dinámico con Componentes UI Premium y Efecto Hover Showcase
+        // --- RENDERIZADO DEL ENTORNO DE TRABAJO ---
         function renderPreview() {
             const grid = document.getElementById('preview-grid');
+            if (!grid) return;
             grid.innerHTML = '';
+
             if (state.cards.length === 0) {
-                grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🃏</div><span>El estudio está listo. Importa un mazo competitivo para previsualizar los assets.</span></div>`;
+                grid.innerHTML = '<div class="empty-state">No hay assets cargados en memoria.</div>';
                 return;
             }
 
@@ -1316,26 +1266,34 @@
                 block.setAttribute('onclick', `openModal(${index})`);
 
                 if (item.error) {
-                    block.innerHTML = `<div style="padding:20px; color:var(--error); font-size:0.8rem; text-align:center;"><strong>Error</strong><br>${item.reqName}<br><span style="color:var(--text-dim)">${item.error}</span></div>`;
+                    block.innerHTML = `
+                            <div style="padding: 16px; color: var(--error); font-size: 0.8rem; text-align: center; display:flex; flex-direction:column; height:100%; justify-content:center;">
+                                <strong>No se localizó</strong>
+                                <span style="font-size:0.75rem; word-break:break-all; color:var(--text-muted); margin-top:4px;">"${item.reqName}"</span>
+                            </div>
+                        `;
                 } else {
                     const imgUrl = extractImageUrl(item.data);
                     const isDoubleFace = isDFC(item.data);
                     const badgeLang = item.lang !== 'en' ? `<span class="card-badge-ui">${item.lang.toUpperCase()}</span>` : '';
-                    const badgeDfc = isDoubleFace ? `<span class="card-badge-ui" style="background:#4c1d95; border-color:#7c3aed;">DFC</span>` : '';
+                    const badgeDfc = isDoubleFace ? `<span class="card-badge-ui" style="background:#4c1d95; color:#ddd; border-color:#7c3aed;">DFC</span>` : '';
                     const setCode = item.data.set ? item.data.set.toUpperCase() : '---';
 
                     block.innerHTML = `
                             <img src="${imgUrl}" alt="${item.data.name}" loading="lazy" />
                             <div class="card-meta-overlay">
                                 <div class="card-info-top">
-                                    <span class="card-badge-ui" style="background:var(--gold-dim); color:#000; padding:2px 6px;">x${item.qty}</span>
+                                    <div onclick="event.stopPropagation();">
+                                        <input type="number" class="qty-input" min="1" max="99" value="${item.qty}" onchange="changeCardQty(${index}, this.value)" />
+                                    </div>
                                     <button class="card-remove-btn" onclick="event.stopPropagation(); removeCard(${index})">✕</button>
                                 </div>
                                 <div class="card-info-bottom">
-                                    <div class="card-title-text">${item.data.name}</div>
-                                    <div style="display:flex; justify-content:between; align-items:center; width:100%;">
-                                        <span class="card-set-text">${setCode}</span>
-                                        <div style="display:flex; gap:4px; margin-left:auto;">${badgeLang}${badgeDfc}</div>
+                                    <span class="card-title-text">${item.data.name}</span>
+                                    <div style="display:flex; gap:4px;">
+                                        <span class="card-set-text" style="align-self: center; margin-right:2px;">${setCode}</span>
+                                        ${badgeLang}
+                                        ${badgeDfc}
                                     </div>
                                 </div>
                             </div>
@@ -1343,17 +1301,32 @@
                 }
                 grid.appendChild(block);
             });
-
-            if (state.cards.length > 0) {
-                document.getElementById('step-3').classList.add('active');
-            }
         }
 
+        function changeCardQty(index, val) {
+            let parsed = parseInt(val, 10);
+            if (isNaN(parsed) || parsed < 1) parsed = 1;
+            state.cards[index].qty = parsed;
+            updateStats(state.cards);
+        }
+
+        function removeCard(index) {
+            state.cards.splice(index, 1);
+            updateStats(state.cards);
+            renderPreview();
+        }
+
+        // --- CONTROLADORES DE CARGA DE MAZO ---
         async function loadDeck() {
             if (state.loading) return;
-            const input = document.getElementById('deck-input').value;
-            const parsed = parseArena(input);
-            if (!parsed.length) { setLog('La lista no contiene cartas legibles.', 'error'); return; }
+            const textarea = document.getElementById('deck-input');
+            const linesText = textarea ? textarea.value : '';
+            const parsedList = parseArena(linesText);
+
+            if (!parsedList.length) {
+                setLog('La lista no contiene cartas legibles o estructuradas.', 'error');
+                return;
+            }
 
             state.loading = true;
             if (state.abortController) state.abortController.abort();
@@ -1361,35 +1334,40 @@
             const signal = state.abortController.signal;
 
             showLoadingOverlay('Iniciando forja de cartas...');
-            setLog('Buscando información en Scryfall...', '');
+            setLog('Sincronizando lote con el API de Scryfall...', '');
             setProgress(10);
+
+            // Inyectar la interfaz de Skeletons animados durante el delay de carga
+            const grid = document.getElementById('preview-grid');
+            if (grid) grid.innerHTML = Array(Math.min(parsedList.length, 12)).fill('<div class="skeleton-card"></div>').join('');
 
             try {
                 const targetLang = getGlobalLang();
-                const uniqueNames = parsed.map(c => c.name);
-
-                // Muestra esqueleto animado mientras carga el batch
-                const grid = document.getElementById('preview-grid');
-                grid.innerHTML = Array(Math.min(uniqueNames.length, 8)).fill('<div class="skeleton-card"></div>').join('');
+                const uniqueNames = parsedList.map(c => c.name);
 
                 let baseMap = new Map();
                 const chunks = [];
-                for (let i = 0; i < uniqueNames.length; i += 75) chunks.push(uniqueNames.slice(i, i + 75));
-                for (const chunk of chunks) {
-                    if (signal.aborted) return;
-                    const r = await fetchCollectionBatch(chunk);
-                    for (const [k, v] of r.map) baseMap.set(k, v);
+                for (let i = 0; i < uniqueNames.length; i += 75) {
+                    chunks.push(uniqueNames.slice(i, i + 75));
                 }
 
-                setProgress(40);
+                for (const chunk of chunks) {
+                    if (signal.aborted) return;
+                    const res = await fetchCollectionBatch(chunk);
+                    for (const [k, v] of res.map) {
+                        baseMap.set(k, v);
+                    }
+                }
+
+                setProgress(50);
                 const finalCards = [];
                 const langNeeded = new Map();
 
-                parsed.forEach(p => {
+                parsedList.forEach(p => {
                     const norm = normalizeCardName(p.name);
                     const found = baseMap.get(norm);
                     if (!found) {
-                        finalCards.push({ reqName: p.name, qty: p.qty, error: 'Carta no encontrada en base de datos Scryfall.', lang: 'en' });
+                        finalCards.push({ reqName: p.name, qty: p.qty, error: 'No se encontró en Scryfall.', lang: 'en' });
                     } else {
                         finalCards.push({ reqName: p.name, qty: p.qty, data: found, lang: 'en' });
                         if (targetLang !== 'en') {
@@ -1407,18 +1385,28 @@
                     finalCards.forEach(c => {
                         if (c.data && !c.error) {
                             const match = langMap.get(normalizeCardName(c.data.name));
-                            if (match) { c.data = match; c.lang = targetLang; }
+                            if (match) {
+                                c.data = match;
+                                c.lang = targetLang;
+                            }
                         }
                     });
                 }
 
+                if (signal.aborted) return;
+
                 state.cards = finalCards;
-                setLog(`Sincronización completada con éxito. ${state.cards.length} cartas procesadas.`, 'ok');
-                document.getElementById('btn-pdf').disabled = false;
-                document.getElementById('step-4').classList.add('active');
+                updateStats(state.cards);
+                setLog(`Sincronización finalizada. ${state.cards.length} referencias procesadas.`, 'ok');
+
+                const pdfBtn = document.getElementById('btn-pdf');
+                if (pdfBtn) pdfBtn.disabled = false;
+
             } catch (err) {
                 if (err.name === 'AbortError') return;
-                setLog('Fallo crítico en la consulta del API: ' + err.message, 'error');
+                setLog('Fallo crítico en el proceso de indexación: ' + err.message, 'error');
+                const pdfBtn = document.getElementById('btn-pdf');
+                if (pdfBtn) pdfBtn.disabled = true;
             } finally {
                 state.loading = false;
                 hideLoadingOverlay();
@@ -1426,29 +1414,27 @@
             }
         }
 
-        function removeCard(index) {
-            state.cards.splice(index, 1);
-            updateStats(state.cards);
-            renderPreview();
-        }
-
-        // Control y Lógica de Modales Premium
+        // --- CONTROL MODAL DE IMPRESIONES ALTERNATIVAS ---
         async function openModal(index) {
-            const card = state.cards[index];
-            if (!card || card.error) return;
+            const item = state.cards[index];
+            if (!item || item.error) return;
+
             modal.cardIndex = index;
-            modal.currentLang = card.lang;
-            modal.selectedPrintId = card.data.id;
+            modal.currentLang = item.lang;
+            modal.selectedPrintId = item.data.id;
 
-            document.getElementById('modal-card-name').textContent = card.data.name;
+            document.getElementById('modal-card-name').textContent = item.data.name;
             document.getElementById('modal-lang').value = modal.currentLang;
-            document.getElementById('art-modal').classList.add('open');
 
-            await loadPrints(card.data.name, modal.currentLang);
+            const overlay = document.getElementById('art-modal');
+            if (overlay) overlay.classList.add('open');
+
+            await loadPrints(item.data.name, modal.currentLang);
         }
 
         function closeModal() {
-            document.getElementById('art-modal').classList.remove('open');
+            const overlay = document.getElementById('art-modal');
+            if (overlay) overlay.classList.remove('open');
             modal.cardIndex = -1;
         }
 
@@ -1458,7 +1444,9 @@
 
         async function loadPrints(cardName, lang) {
             const grid = document.getElementById('prints-grid');
-            grid.innerHTML = '<div class="prints-loading"><div class="spinner-ring" style="margin:0 auto 12px;"></div>Indexando artes alternativas...</div>';
+            if (!grid) return;
+
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 32px; color: var(--text-muted);"><div class="spinner-ring" style="margin: 0 auto 12px;"></div>Indexando artes alternativas...</div>';
             document.getElementById('btn-apply').disabled = true;
 
             const cacheKey = `${cardName}_${lang}`;
@@ -1468,29 +1456,32 @@
                 if (!data) {
                     const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(`!"${cardName}"`)}&unique=prints&order=released`;
                     const res = await fetchWithRetry(url);
-                    if (res && res.ok) { data = await res.json(); state.printsCache[cacheKey] = data; }
+                    if (res && res.ok) {
+                        data = await res.json();
+                        state.printsCache[cacheKey] = data;
+                    }
                 }
 
                 if (!data || !data.data || data.data.length === 0) {
-                    grid.innerHTML = '<div class="no-prints">No se han localizado variantes para esta edición.</div>';
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 24px; color: var(--text-dim);">No se han localizado variantes alternativas para este asset.</div>';
                     return;
                 }
 
                 modal.prints = data.data.filter(c => hasValidImage(c));
-                document.getElementById('modal-print-count').textContent = `${modal.prints.length} Ediciones localizadas`;
+                document.getElementById('modal-print-count').textContent = `${modal.prints.length} Ediciones`;
 
                 grid.innerHTML = '';
                 modal.prints.forEach(p => {
-                    const item = document.createElement('div');
+                    const block = document.createElement('div');
                     const isSelected = p.id === modal.selectedPrintId;
-                    item.className = `print-card ${isSelected ? 'selected' : ''}`;
-                    item.setAttribute('onclick', `selectPrint('${p.id}')`);
+                    block.className = `print-card ${isSelected ? 'selected' : ''}`;
+                    block.setAttribute('onclick', `selectPrint('${p.id}')`);
 
                     const imgUrl = extractImageUrl(p);
                     const r = p.rarity ? p.rarity.substring(0, 1).toUpperCase() : '?';
-                    const foilBadge = p.foil ? '<span class="print-badge" style="background:linear-gradient(45deg, #f59e0b, #ec4899)">Foil</span>' : '';
+                    const foilBadge = p.foil && !p.nonfoil ? '<span class="print-badge" style="background:linear-gradient(45deg, #f59e0b, #ec4899); color:#fff;">Foil</span>' : '';
 
-                    item.innerHTML = `
+                    block.innerHTML = `
                             <img src="${imgUrl}" alt="${p.set_name}" />
                             ${foilBadge}
                             <div class="print-meta">
@@ -1498,21 +1489,23 @@
                                 <span class="set-detail">${p.set.toUpperCase()} · ${p.released_at.substring(0, 4)} · [${r}]</span>
                             </div>
                         `;
-                    grid.appendChild(item);
+                    grid.appendChild(block);
                     if (isSelected) document.getElementById('btn-apply').disabled = false;
                 });
-            } catch (e) {
-                grid.innerHTML = '<div class="no-prints">Error de conexión con el catálogo de Scryfall.</div>';
+
+            } catch (err) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--error); padding: 16px;">Error de comunicación con el catálogo central.</div>';
             }
         }
 
         function selectPrint(id) {
             modal.selectedPrintId = id;
-            document.querySelectorAll('.print-card').forEach(el => el.classList.remove('selected'));
-            const cards = modal.prints;
-            const idx = cards.findIndex(c => c.id === id);
-            if (idx !== -1) {
-                document.getElementById('prints-grid').children[idx].classList.add('selected');
+            const items = document.querySelectorAll('.print-card');
+            items.forEach(el => el.classList.remove('selected'));
+
+            const idx = modal.prints.findIndex(p => p.id === id);
+            if (idx !== -1 && items[idx]) {
+                items[idx].classList.add('selected');
                 document.getElementById('btn-apply').disabled = false;
             }
         }
@@ -1520,16 +1513,16 @@
         async function onModalLangChange() {
             const nextLang = document.getElementById('modal-lang').value;
             modal.currentLang = nextLang;
-            const card = state.cards[modal.cardIndex];
+            const originCard = state.cards[modal.cardIndex];
 
             if (nextLang !== 'en') {
-                const localized = await fetchCardLang(card.reqName, nextLang);
+                const localized = await fetchCardLang(originCard.reqName, nextLang);
                 if (localized) {
                     await loadPrints(localized.name, nextLang);
                     return;
                 }
             }
-            await loadPrints(card.reqName, 'en');
+            await loadPrints(originCard.reqName, 'en');
         }
 
         function applySelection() {
@@ -1543,40 +1536,56 @@
             closeModal();
         }
 
-        // Generador de PDFs Nativo con Cálculo de Márgenes Profesional
+        // --- SISTEMA COMPILADOR PDF NATIVO ---
         async function generatePDF() {
             const valid = state.cards.filter(c => c.data && !c.error);
             if (!valid.length) return;
 
-            showLoadingOverlay('Compilando PDF e inyectando artes de alta resolución...');
+            showLoadingOverlay('Inyectando canales multimedia de alta definición...');
             setProgress(5);
 
             try {
                 const { jsPDF } = window.jspdf;
                 const isA4 = document.getElementById('pdf-paper').value === 'a4';
-                const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: isA4 ? 'a4' : 'letter' });
 
-                const pw = isA4 ? 210 : 215.9;
-                const ph = isA4 ? 297 : 279.4;
-                const cw = 63, ch = 88;
-                const mx = (pw - (cw * 3)) / 2;
-                const my = (ph - (ch * 3)) / 2;
+                // Inicialización de la hoja física en milímetros (mm)
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: isA4 ? 'a4' : 'letter'
+                });
 
-                let currentCard = 0;
-                const totalProxies = valid.reduce((s, c) => s + c.qty, 0);
-                let loadedCount = 0;
+                const pageWidth = isA4 ? 210 : 215.9;
+                const pageHeight = isA4 ? 297 : 279.4;
+
+                // Medidas estándar de una carta MTG física
+                const cardWidth = 63;
+                const cardHeight = 88;
+
+                // Márgenes simétricos automáticos de la cuadrícula de 3x3
+                const mx = (pageWidth - (cardWidth * 3)) / 2;
+                const my = (pageHeight - (cardHeight * 3)) / 2;
 
                 const itemsList = [];
-                valid.forEach(c => { for (let i = 0; i < c.qty; i++) itemsList.push(c.data); });
+                valid.forEach(c => {
+                    for (let i = 0; i < c.qty; i++) {
+                        itemsList.push(c.data);
+                    }
+                });
+
+                let loadedCount = 0;
 
                 for (let i = 0; i < itemsList.length; i++) {
-                    if (i > 0 && i % 9 === 0) doc.addPage();
+                    if (i > 0 && i % 9 === 0) {
+                        doc.addPage();
+                    }
 
                     const pos = i % 9;
                     const col = pos % 3;
                     const row = Math.floor(pos / 3);
-                    const x = mx + (col * cw);
-                    const y = my + (row * ch);
+
+                    const x = mx + (col * cardWidth);
+                    const y = my + (row * cardHeight);
 
                     const cardData = itemsList[i];
                     const url = extractImageUrl(cardData);
@@ -1588,52 +1597,94 @@
                         imageBlobCache.set(url, blob);
                     }
 
-                    const base64 = await new Promise(res => {
-                        const fr = new FileReader();
-                        fr.onloadend = () => res(fr.result);
-                        fr.readAsDataURL(blob);
+                    const base64 = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(blob);
                     });
 
-                    doc.addImage(base64, 'JPEG', x, y, cw, ch, undefined, 'FAST');
+                    doc.addImage(base64, 'JPEG', x, y, cardWidth, cardHeight, undefined, 'FAST');
 
-                    // Dibujar marcas de corte si está habilitado
+                    // Capa opcional de guías de corte finas vectoriales
                     if (document.getElementById('pdf-marks').value === 'yes') {
                         doc.setDrawColor(180, 180, 180);
                         doc.setLineWidth(0.1);
-                        if (col === 0) { doc.line(x - 4, y, x, y); doc.line(x - 4, y + ch, x, y + ch); }
-                        if (col === 2) { doc.line(x + cw, y, x + cw + 4, y); doc.line(x + cw, y + ch, x + cw + 4, y + ch); }
-                        if (row === 0) { doc.line(x, y - 4, x, y); doc.line(x + cw, y - 4, x + cw, y); }
-                        if (row === 2) { doc.line(x, y + ch, x, y + ch + 4); doc.line(x + cw, y + ch, x + cw + 4, y + ch + 4); }
+                        if (col === 0) { doc.line(x - 3, y, x, y); doc.line(x - 3, y + cardHeight, x, y + cardHeight); }
+                        if (col === 2) { doc.line(x + cardWidth, y, x + cardWidth + 3, y); doc.line(x + cardWidth, y + cardHeight, x + cardWidth + 3, y + cardHeight); }
+                        if (row === 0) { doc.line(x, y - 3, x, y); doc.line(x + cardWidth, y - 3, x + cardWidth, y); }
+                        if (row === 2) { doc.line(x, y + cardHeight, x, y + cardHeight + 3); doc.line(x + cardWidth, y + cardHeight, x + cardWidth + 3, y + cardHeight + 3); }
                     }
 
                     loadedCount++;
-                    setProgress(Math.floor((loadedCount / totalProxies) * 100));
+                    setProgress(Math.floor((loadedCount / itemsList.length) * 100));
                 }
 
-                doc.save('MTG_Forge_Premium_Proxies.pdf');
-                setLog('Documento PDF generado y descargado con éxito.', 'ok');
+                doc.save('MTG_Forge_Studio_Print.pdf');
+                setLog('Documento de impresión PDF descargado correctamente.', 'ok');
+
             } catch (err) {
-                setLog('Error durante la renderización del PDF: ' + err.message, 'error');
+                setLog('Error crítico en render: ' + err.message, 'error');
             } finally {
                 hideLoadingOverlay();
             }
         }
 
-        // Sistema Nativo de Gestión de Temas UI
+        // --- SISTEMA NATIVO DE GESTIÓN DE TEMAS INTERFAZ ---
         function toggleTheme() {
-            const curr = document.documentElement.getAttribute('data-theme') || 'dark';
-            const next = curr === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('mtg-proxy-theme', next);
-
-            document.getElementById('theme-icon').textContent = next === 'dark' ? '🌙' : '☀️';
-            document.getElementById('theme-label').textContent = next === 'dark' ? 'Oscuro' : 'Claro';
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+            try { localStorage.setItem('mtg-proxy-theme', next); } catch (e) { }
         }
 
-        // Listener dinámico en tiempo real para actualización de HUD
-        document.getElementById('deck-input').addEventListener('input', function () {
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const icon = document.getElementById('theme-icon');
+            const label = document.getElementById('theme-label');
+            if (theme === 'light') {
+                if (icon) icon.textContent = '☀️';
+                if (label) label.textContent = 'Claro';
+            } else {
+                if (icon) icon.textContent = '🌙';
+                if (label) label.textContent = 'Oscuro';
+            }
+        }
+
+        // Restaurar tema guardado al cargar
+        (function () {
+            let saved = 'dark';
+            try { saved = localStorage.getItem('mtg-proxy-theme') || 'dark'; } catch (e) { }
+            applyTheme(saved);
+        })();
+
+        // --- LOADING OVERLAY UTILS ---
+        function showLoadingOverlay(msg) {
+            const ov = document.getElementById('loading-overlay');
+            const tx = document.getElementById('loading-text');
+            if (ov) ov.classList.add('active');
+            if (tx && msg) tx.textContent = msg;
+        }
+
+        function hideLoadingOverlay() {
+            const ov = document.getElementById('loading-overlay');
+            if (ov) ov.classList.remove('active');
+            setProgress(0);
+            const pb = document.getElementById('loading-prog-bar');
+            if (pb) pb.style.width = '0%';
+        }
+
+        // Función Debounce interna nativa para actualizar estadísticas en tiempo real
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        document.getElementById('deck-input').addEventListener('input', debounce(function () {
             updateStats(parseArena(this.value));
-        });
+        }, 250));
     </script>
 </body>
 </html>
