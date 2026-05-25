@@ -1,129 +1,330 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MTG Proxy Generator 1.2</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+    <title>MTG Forge | Premium Proxy Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
+        /* ==========================================================================
+           1. DESIGN TOKENS (SCRYFALL / MTG ARENA DARK INSPIRED)
+           ========================================================================== */
         :root {
-            --bg: #0d0f0a;
-            --surface: #141810;
-            --surface2: #1a1f15;
-            --border: #2e3828;
-            --gold: #c9a84c;
-            --gold-dim: #8a6e2f;
-            --green: #3a5c2e;
-            --green-hi: #4f7a3f;
-            --text: #d9cfc0;
-            --text-dim: #7a7060;
-            --error: #c0392b;
-            --radius: 6px;
+            /* Colores de Fondo y Superficie */
+            --bg-gradient: linear-gradient(135deg, #090d0a 0%, #111812 50%, #151e16 100%);
+            --bg: #0b100c;
+            --bg-alt: #121913;
+            --surface: #162017;
+            --surface-elevated: #1f2d20;
+            --surface-accent: #263628;
+            /* Bordes y Divisiones */
+            --border: #2d3f30;
+            --border-glow: #3e5842;
+            /* Colores de Acento Estilo MTG */
+            --gold: #c5a059;
+            --gold-hover: #e0be7a;
+            --gold-dim: #8b6e3b;
+            --gold-glow: rgba(197, 160, 89, 0.25);
+            --green-mana: #225a33;
+            --green-mana-hover: #2d7543;
+            --green-mana-glow: rgba(45, 117, 67, 0.3);
+            /* Estados y Alertas */
+            --text: #e2e8f0;
+            --text-muted: #8fa393;
+            --text-dim: #647c6a;
+            --error: #f43f5e;
+            --error-bg: rgba(244, 63, 94, 0.1);
+            --ok: #10b981;
+            --ok-bg: rgba(16, 185, 129, 0.1);
+            /* Sombras y Efectos */
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.5);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.6);
+            --shadow-lg: 0 16px 48px rgba(0,0,0,0.8);
+            --radius-sm: 6px;
+            --radius: 10px;
+            --radius-lg: 16px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        [data-theme="light"] {
+            --bg-gradient: none;
+            --bg: #f4f6f4;
+            --bg-alt: #ebf0eb;
+            --surface: #ffffff;
+            --surface-elevated: #fcfdfc;
+            --surface-accent: #e1eae2;
+            --border: #cbd5e1;
+            --border-glow: #94a3b8;
+            --gold: #8c6216;
+            --gold-hover: #b07d20;
+            --gold-dim: #68480e;
+            --gold-glow: rgba(140, 98, 22, 0.15);
+            --green-mana: #1b5e20;
+            --green-mana-hover: #2e7d32;
+            --green-mana-glow: rgba(46, 125, 50, 0.2);
+            --text: #0f172a;
+            --text-muted: #475569;
+            --text-dim: #64748b;
+            --error: #dc2626;
+            --error-bg: #fee2e2;
+            --ok: #15803d;
+            --ok-bg: #dcfce7;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 12px 32px rgba(0,0,0,0.12);
+        }
+
+        /* ==========================================================================
+           2. BASE RESET & ESTRUCTURA GLOBAL
+           ========================================================================== */
         *, *::before, *::after {
             box-sizing: border-box;
             margin: 0;
-            padding: 0
+            padding: 0;
         }
 
         body {
             background: var(--bg);
+            background-image: var(--bg-gradient);
             color: var(--text);
-            font-family: 'Crimson Pro',Georgia,serif;
-            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
             min-height: 100vh;
             display: flex;
-            flex-direction: column
+            flex-direction: column;
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
         }
 
+        /* Scrollbars Customizados */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: var(--gold-dim);
+            }
+
+        /* ==========================================================================
+           3. HEADER (STUDIO BAR)
+           ========================================================================== */
         header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(22, 32, 23, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
-            padding: 22px 32px 18px;
+            padding: 0 24px;
+            height: 64px;
             display: flex;
-            align-items: flex-end;
-            gap: 16px;
-            background: linear-gradient(180deg,#0a0d08 0%,var(--bg) 100%)
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .logo-icon {
-            width: 36px;
-            height: 36px;
-            background: var(--gold);
-            clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
-            flex-shrink: 0
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dim) 100%);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            box-shadow: 0 0 10px var(--gold-glow);
         }
 
         h1 {
-            font-family: 'Cinzel',serif;
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            color: var(--gold);
-            line-height: 1
+            font-family: 'Cinzel', serif;
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: var(--text);
+            line-height: 1;
         }
 
             h1 span {
-                color: var(--text-dim);
-                font-weight: 400;
-                font-size: 0.75rem;
+                color: var(--gold);
+                font-weight: 500;
+                font-size: 0.68rem;
                 display: block;
                 margin-top: 4px;
-                letter-spacing: 0.2em;
-                font-family: 'Crimson Pro',serif;
-                font-style: italic
+                letter-spacing: 0.15em;
+                font-family: 'Inter', sans-serif;
+                text-transform: uppercase;
             }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+
+            .header-btn:hover {
+                border-color: var(--gold-dim);
+                color: var(--gold);
+                background: var(--surface);
+            }
+
+        .theme-toggle {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+            .theme-toggle:hover {
+                border-color: var(--gold);
+                box-shadow: 0 0 8px var(--gold-glow);
+            }
+
+        /* ==========================================================================
+           4. PRINCIPAL LAYOUT
+           ========================================================================== */
         main {
             flex: 1;
             display: grid;
-            grid-template-columns: 300px 1fr;
-            gap: 32px;
-            max-width: 1400px;
+            grid-template-columns: 380px 1fr;
             width: 100%;
+            max-width: 1800px;
             margin: 0 auto;
-            padding: 28px 32px
+            align-items: start;
         }
 
+        /* ==========================================================================
+           5. SIDEBAR CONTROL PANEL
+           ========================================================================== */
         .panel {
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 16px
+            gap: 20px;
+            padding: 24px;
+            background: rgba(18, 25, 19, 0.6);
+            border-right: 1px solid var(--border);
+        }
+
+        /* UX Step-by-Step Component */
+        .visual-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: var(--surface);
+            padding: 12px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .step-num {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .step-item.active {
+            color: var(--gold);
+        }
+
+            .step-item.active .step-num {
+                background: var(--gold-dim);
+                border-color: var(--gold);
+                color: var(--bg);
+            }
+
+        /* Formulario y Controles */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .field-label {
-            font-family: 'Cinzel',serif;
-            font-size: 0.65rem;
-            letter-spacing: 0.18em;
-            color: var(--gold-dim);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
             text-transform: uppercase;
-            display: block;
-            margin-bottom: 7px
         }
 
         textarea {
             width: 100%;
-            height: 240px;
+            height: 160px;
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
             color: var(--text);
-            font-family: 'Courier New',monospace;
-            font-size: 0.8rem;
-            line-height: 1.7;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
             padding: 12px;
             resize: vertical;
             outline: none;
-            transition: border-color 0.2s
+            transition: var(--transition);
         }
 
             textarea:focus {
-                border-color: var(--gold-dim)
-            }
-
-            textarea::placeholder {
-                color: var(--text-dim)
+                border-color: var(--gold-dim);
+                box-shadow: 0 0 0 3px var(--gold-glow);
+                background: var(--surface-elevated);
             }
 
         select {
@@ -132,627 +333,652 @@
             border: 1px solid var(--border);
             border-radius: var(--radius);
             color: var(--text);
-            font-family: 'Crimson Pro',serif;
+            font-family: inherit;
             font-size: 0.9rem;
-            padding: 9px 32px 9px 12px;
+            padding: 10px 36px 10px 12px;
             outline: none;
             cursor: pointer;
-            transition: border-color 0.2s;
+            transition: var(--transition);
             appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a6e2f'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238fa393' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
-            background-position: right 12px center
+            background-position: right 14px center;
         }
 
             select:focus {
-                border-color: var(--gold-dim)
-            }
-
-            select option {
-                background: #1a1f15
-            }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-family: 'Cinzel',serif;
-            font-size: 0.72rem;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            padding: 11px 24px;
-            border-radius: var(--radius);
-            border: none;
-            cursor: pointer;
-            transition: all 0.18s;
-            width: 100%
-        }
-
-        .btn-primary {
-            background: var(--green);
-            color: #d4efcc;
-            border: 1px solid var(--green-hi)
-        }
-
-            .btn-primary:hover:not(:disabled) {
-                background: var(--green-hi)
-            }
-
-            .btn-primary:disabled {
-                opacity: 0.4;
-                cursor: not-allowed
-            }
-
-        .btn-gold {
-            background: var(--gold);
-            color: #1a1500;
-            border: 1px solid #e0be6a;
-            font-weight: 600
-        }
-
-            .btn-gold:hover:not(:disabled) {
-                background: #dbb85a
-            }
-
-            .btn-gold:disabled {
-                opacity: 0.3;
-                cursor: not-allowed
-            }
-
-        .btn-ghost {
-            background: transparent;
-            color: var(--text-dim);
-            border: 1px solid var(--border);
-            width: auto;
-            padding: 7px 16px;
-            font-size: 0.65rem
-        }
-
-            .btn-ghost:hover {
                 border-color: var(--gold-dim);
-                color: var(--gold-dim)
+                box-shadow: 0 0 0 3px var(--gold-glow);
             }
 
-        .stats {
+        /* Grid de Opciones Avanzadas de Impresión */
+        .pdf-options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
             background: var(--surface);
+            padding: 12px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .pdf-opt-label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+            .pdf-opt-label select {
+                padding: 6px 24px 6px 8px;
+                font-size: 0.8rem;
+                border-radius: var(--radius-sm);
+            }
+
+        .hint {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        /* Stats HUD Premium */
+        .stats {
+            background: linear-gradient(to bottom, var(--surface), var(--bg-alt));
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 12px 16px;
+            padding: 12px;
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            text-align: center
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            box-shadow: var(--shadow-sm);
         }
+
+        .stat-block {
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+
+            .stat-block:last-child {
+                border-right: none;
+            }
 
         .stat-val {
-            font-family: 'Cinzel',serif;
-            font-size: 1.3rem;
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
             color: var(--gold);
             font-weight: 700;
-            line-height: 1
         }
 
         .stat-lbl {
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             color: var(--text-dim);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-top: 3px
+            font-weight: 700;
+            letter-spacing: 0.05em;
         }
 
+        /* Mensajes Logs & Feedback */
         #log {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 10px 13px;
-            font-size: 0.76rem;
-            color: var(--text-dim);
-            font-style: italic;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
             min-height: 40px;
-            line-height: 1.5
+            display: flex;
+            align-items: center;
+            transition: var(--transition);
         }
 
             #log.error {
                 color: var(--error);
-                border-color: #5a1a1a
+                background: var(--error-bg);
+                border-color: var(--error);
             }
 
             #log.ok {
-                color: #7ac97a;
-                border-color: #1a3a1a
+                color: var(--ok);
+                background: var(--ok-bg);
+                border-color: var(--ok);
             }
 
         .progress-wrap {
-            height: 2px;
+            height: 4px;
             background: var(--border);
             border-radius: 2px;
-            overflow: hidden
+            overflow: hidden;
         }
 
         #progress-bar {
             height: 100%;
             width: 0%;
-            background: var(--gold);
-            transition: width 0.25s
+            background: linear-gradient(90deg, var(--green-mana) 0%, var(--gold) 100%);
+            transition: width 0.3s ease;
         }
 
+        /* Botones de Acción Principal */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--green-mana);
+            color: #fff;
+            box-shadow: 0 4px 12px var(--green-mana-glow);
+        }
+
+            .btn-primary:hover:not(:disabled) {
+                background: var(--green-mana-hover);
+                transform: translateY(-1px);
+                box-shadow: 0 6px 20px var(--green-mana-glow);
+            }
+
+            .btn-primary:disabled {
+                opacity: 0.25;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        .btn-gold {
+            background: linear-gradient(to bottom, var(--gold), var(--gold-dim));
+            color: var(--bg);
+            box-shadow: 0 4px 12px var(--gold-glow);
+            font-weight: 700;
+        }
+
+            .btn-gold:hover:not(:disabled) {
+                filter: brightness(1.1);
+                transform: translateY(-1px);
+                box-shadow: 0 6px 20px var(--gold-glow);
+            }
+
+            .btn-gold:disabled {
+                opacity: 0.15;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        /* ==========================================================================
+           6. PREVIEW CANVAS (ZONA CENTRAL DERECHA)
+           ========================================================================== */
         .preview-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 14px
+            padding: 32px;
+            min-height: calc(100vh - 64px);
+            background: rgba(11, 16, 12, 0.4);
+        }
+
+        .preview-surface {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
         }
 
         .preview-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 10px
         }
 
         .preview-title {
-            font-family: 'Cinzel',serif;
-            font-size: 0.62rem;
-            letter-spacing: 0.15em;
-            color: var(--text-dim);
-            text-transform: uppercase
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            text-transform: uppercase;
         }
 
+        /* Grid de Cartas Optimizado */
         #preview-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
-            gap: 10px;
-            min-height: 180px
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 24px;
         }
 
+        /* Carta de MTG Individual */
         .card-thumb {
             position: relative;
-            border-radius: 7px;
+            border-radius: 4.75% / 3.5%; /* Ratio nativo bordes MTG */
             overflow: hidden;
             aspect-ratio: 63/88;
-            background: var(--surface);
+            background: var(--bg-alt);
             border: 1px solid var(--border);
             cursor: pointer;
-            transition: transform 0.15s,border-color 0.15s,box-shadow 0.15s
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
         }
 
             .card-thumb:hover {
-                transform: scale(1.04);
-                border-color: var(--gold-dim);
-                box-shadow: 0 4px 20px rgba(0,0,0,0.5)
+                transform: translateY(-6px) scale(1.02);
+                border-color: var(--gold);
+                box-shadow: var(--shadow-lg), 0 0 15px var(--gold-glow);
+                z-index: 10;
             }
 
             .card-thumb img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
-                display: block
+                display: block;
             }
 
-        .card-edit-btn {
+        /* Overlay de Información en Hover */
+        .card-meta-overlay {
             position: absolute;
-            bottom: 5px;
-            left: 5px;
-            background: rgba(0,0,0,0.8);
-            color: var(--text-dim);
-            font-size: 0.6rem;
-            border-radius: 4px;
-            padding: 2px 6px;
-            border: 1px solid var(--border);
-            line-height: 1.4;
-            opacity: 0;
-            transition: opacity 0.15s
-        }
-
-        .card-thumb:hover .card-edit-btn {
-            opacity: 1
-        }
-
-        .card-lang-badge {
-            position: absolute;
-            bottom: 5px;
-            right: 5px;
-            background: rgba(0,0,0,0.75);
-            color: var(--text-dim);
-            font-size: 0.58rem;
-            border-radius: 3px;
-            padding: 1px 5px;
-            border: 1px solid var(--border);
-            text-transform: uppercase;
-            letter-spacing: 0.05em
-        }
-
-        .card-dfc-badge {
-            position: absolute;
-            bottom: 26px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(40,0,80,0.92);
-            color: #cc99ff;
-            font-size: 0.68rem;
-            font-weight: 700;
-            border-radius: 4px;
-            padding: 2px 9px;
-            border: 1px solid #9955dd;
-            line-height: 1.5;
-            pointer-events: none;
-            white-space: nowrap;
-            z-index: 3
-        }
-
-        .card-error-thumb {
-            width: 100%;
-            height: 100%;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.9) 100%);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 8px;
-            text-align: center;
-            font-size: 0.62rem;
-            color: var(--error);
-            line-height: 1.5;
-            gap: 4px
+            justify-content: space-between;
+            padding: 12px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            z-index: 2;
         }
 
-            .card-error-thumb span {
-                color: var(--text-dim);
-                font-size: 0.58rem
+        .card-thumb:hover .card-meta-overlay {
+            opacity: 1;
+        }
+
+        .card-info-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: auto;
+        }
+
+        .card-info-bottom {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            pointer-events: auto;
+        }
+
+        .card-title-text {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 1px 4px #000;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-set-text {
+            font-size: 0.72rem;
+            color: var(--gold);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Badges de Estado */
+        .card-badge-ui {
+            background: rgba(15, 23, 15, 0.85);
+            backdrop-filter: blur(4px);
+            color: var(--gold);
+            font-size: 0.72rem;
+            font-weight: 700;
+            border-radius: 4px;
+            padding: 2px 8px;
+            border: 1px solid var(--gold-dim);
+            line-height: 1.4;
+        }
+
+        .card-remove-btn {
+            background: #e11d48;
+            color: #fff;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .qty-input {
+            width: 48px;
+            background: #000;
+            color: var(--gold);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border: 1px solid var(--gold);
+            border-radius: 4px;
+            padding: 2px 4px;
+            text-align: center;
+            outline: none;
+        }
+
+        /* SKELETON LOADING ANIMADO */
+        .skeleton-card {
+            aspect-ratio: 63/88;
+            background: linear-gradient(90deg, var(--surface) 25%, var(--surface-elevated) 50%, var(--surface) 75%);
+            background-size: 200% 100%;
+            animation: loading-skeleton 1.5s infinite;
+            border-radius: 4.75% / 3.5%;
+            border: 1px solid var(--border);
+        }
+
+        @keyframes loading-skeleton {
+            0% {
+                background-position: 200% 0;
             }
 
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* Estado Vacío */
         .empty-state {
             grid-column: 1/-1;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 200px;
+            flex-direction: column;
+            gap: 16px;
+            height: 340px;
             color: var(--text-dim);
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-lg);
             font-style: italic;
-            font-size: 0.9rem;
-            border: 1px dashed var(--border);
-            border-radius: var(--radius)
         }
 
-        .ornament {
-            text-align: center;
-            color: var(--gold-dim);
-            font-size: 0.8rem;
-            letter-spacing: 0.5em;
-            user-select: none
+        .empty-state-icon {
+            font-size: 2.5rem;
+            filter: grayscale(1);
+            opacity: 0.4;
         }
 
-        .card-remove-btn {
-            position: absolute;
-            top: 5px;
-            left: 5px;
-            background: rgba(120,20,20,0.85);
-            color: #ffaaaa;
-            font-size: 0.75rem;
-            font-weight: 700;
-            border-radius: 4px;
-            padding: 1px 7px;
-            border: 1px solid #a03030;
-            line-height: 1.5;
-            opacity: 0;
-            transition: opacity 0.15s;
-            cursor: pointer;
-            z-index: 2
-        }
-
-        .card-thumb:hover .card-remove-btn {
-            opacity: 1
-        }
-
-        .card-badge {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(0,0,0,0.8);
-            color: var(--gold);
-            font-family: 'Cinzel',serif;
-            font-size: 0.68rem;
-            font-weight: 700;
-            border-radius: 4px;
-            padding: 2px 6px;
-            border: 1px solid var(--gold-dim);
-            line-height: 1.4;
-            cursor: pointer;
-            z-index: 2
-        }
-
-            .card-badge:hover {
-                background: rgba(60,45,0,0.95);
-                border-color: var(--gold)
-            }
-
-        .qty-input {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            width: 46px;
-            background: #1a1500;
-            color: var(--gold);
-            font-family: 'Cinzel',serif;
-            font-size: 0.8rem;
-            font-weight: 700;
-            border: 1px solid var(--gold);
-            border-radius: 4px;
-            padding: 1px 5px;
-            text-align: center;
-            outline: none;
-            z-index: 3
-        }
-
-        .card-thumb.dragging {
-            opacity: 0.35;
-            border-style: dashed;
-            border-color: var(--gold-dim)
-        }
-
-        .card-thumb.drag-over {
-            border-color: var(--gold);
-            box-shadow: 0 0 0 2px var(--gold);
-            transform: scale(1.05)
-        }
-
-        .hint {
-            font-size: 0.72rem;
-            color: var(--text-dim);
-            font-style: italic;
-            line-height: 1.5
-        }
-
+        /* ==========================================================================
+           7. MODAL DE SELECCIÓN DE ARTE PREMIUM
+           ========================================================================== */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.88);
+            background: rgba(5, 8, 6, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1000;
-            padding: 20px;
+            padding: 24px;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s
+            transition: var(--transition);
         }
 
             .modal-overlay.open {
                 opacity: 1;
-                pointer-events: all
+                pointer-events: all;
             }
 
         .modal {
             background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            width: min(1200px,100%);
-            max-height: 92vh;
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-lg);
+            width: min(1100px, 100%);
+            max-height: 85vh;
             display: flex;
             flex-direction: column;
-            transform: translateY(12px) scale(0.98);
-            transition: transform 0.2s;
-            overflow: hidden
+            transform: scale(0.96) translateY(10px);
+            transition: var(--transition);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
         }
 
         .modal-overlay.open .modal {
-            transform: none
+            transform: scale(1) translateY(0);
         }
 
         .modal-header {
-            padding: 18px 24px;
+            padding: 20px 24px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
-            flex-shrink: 0
+            background: var(--bg-alt);
         }
 
         .modal-title {
-            font-family: 'Cinzel',serif;
-            font-size: 0.85rem;
-            letter-spacing: 0.12em;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
             color: var(--gold);
-            text-transform: uppercase
+            text-transform: uppercase;
         }
 
         .modal-card-name {
-            font-family: 'Crimson Pro',serif;
-            font-size: 1.1rem;
+            font-size: 1.25rem;
+            font-weight: 400;
             color: var(--text);
-            font-style: italic;
-            font-weight: 300;
-            margin-top: 2px
+            margin-top: 2px;
         }
 
         .modal-controls {
             padding: 14px 24px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
             flex-wrap: wrap;
             border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
-            background: var(--surface2)
+            background: var(--surface-elevated);
         }
 
             .modal-controls label {
-                font-family: 'Cinzel',serif;
-                font-size: 0.62rem;
-                letter-spacing: 0.15em;
-                color: var(--gold-dim);
+                font-size: 0.72rem;
+                font-weight: 700;
+                color: var(--text-muted);
                 text-transform: uppercase;
-                white-space: nowrap
             }
 
         .modal-lang-select {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--text);
-            font-family: 'Crimson Pro',serif;
-            font-size: 0.88rem;
-            padding: 7px 30px 7px 10px;
-            outline: none;
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a6e2f'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center
-        }
-
-            .modal-lang-select:focus {
-                border-color: var(--gold-dim)
-            }
-
-        .modal-count {
-            margin-left: auto;
-            font-size: 0.72rem;
-            color: var(--text-dim);
-            font-style: italic
+            width: auto;
+            padding: 6px 32px 6px 12px;
+            font-size: 0.85rem;
+            border-radius: var(--radius-sm);
         }
 
         .modal-body {
-            padding: 20px 24px;
+            padding: 24px;
             overflow-y: auto;
-            flex: 1
+            flex: 1;
+            background: var(--bg);
         }
 
+        /* Grid de Impresiones */
         .prints-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
-            gap: 16px
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
         }
 
         .print-card {
-            border-radius: 8px;
-            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
             overflow: hidden;
             cursor: pointer;
-            transition: border-color 0.15s,transform 0.15s,box-shadow 0.15s;
-            background: var(--surface2)
+            transition: var(--transition);
+            background: var(--surface);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            position: relative;
         }
 
             .print-card:hover {
                 border-color: var(--gold-dim);
-                transform: scale(1.03);
-                box-shadow: 0 6px 24px rgba(0,0,0,0.6)
+                transform: translateY(-4px);
+                box-shadow: var(--shadow-md);
             }
 
             .print-card.selected {
                 border-color: var(--gold);
-                box-shadow: 0 0 0 1px var(--gold)
+                box-shadow: 0 0 12px var(--gold-glow);
+                background: var(--surface-accent);
             }
 
             .print-card img {
                 width: 100%;
                 display: block;
                 aspect-ratio: 63/88;
-                object-fit: cover
+                object-fit: cover;
+                background: var(--bg-alt);
             }
 
         .print-meta {
-            padding: 9px 11px;
-            line-height: 1.5
+            padding: 10px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 4px;
         }
 
             .print-meta .set-name {
-                font-size: 0.78rem;
+                font-size: 0.8rem;
+                font-weight: 600;
                 color: var(--text);
-                display: block;
                 white-space: nowrap;
                 overflow: hidden;
-                text-overflow: ellipsis
+                text-overflow: ellipsis;
             }
 
             .print-meta .set-detail {
-                font-size: 0.68rem;
+                font-size: 0.7rem;
                 color: var(--text-dim);
-                display: block;
-                margin-top: 2px
+                text-transform: uppercase;
+                font-weight: 500;
             }
 
-        .print-card.selected .set-name {
-            color: var(--gold)
+        /* Badges de rareza y acabado dentro de la impresión */
+        .print-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(0,0,0,0.75);
+            color: #fff;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            font-weight: 700;
         }
 
-        .prints-loading {
-            grid-column: 1/-1;
-            display: flex;
+        /* ==========================================================================
+           8. OVERLAYS DE ACCIÓN GLOBAL Y SYSTEM GENERALS
+           ========================================================================== */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 8, 6, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1500;
             align-items: center;
             justify-content: center;
-            height: 180px;
-            color: var(--text-dim);
-            font-style: italic;
-            gap: 10px
         }
 
-        .spinner {
-            width: 18px;
-            height: 18px;
-            border: 2px solid var(--border);
+            .loading-overlay.active {
+                display: flex;
+            }
+
+        .loading-card {
+            background: var(--surface);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-lg);
+            padding: 32px 48px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+        }
+
+        .spinner-ring {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
             border-top-color: var(--gold);
             border-radius: 50%;
-            animation: spin 0.7s linear infinite
+            animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
 
         @keyframes spin {
             to {
-                transform: rotate(360deg)
+                transform: rotate(360deg);
             }
         }
 
-        .no-prints {
-            grid-column: 1/-1;
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-dim);
-            font-style: italic;
-            font-size: 0.88rem;
-            line-height: 1.8
-        }
-
-        .modal-footer {
-            padding: 14px 24px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            flex-shrink: 0;
-            background: var(--surface2)
-        }
-
+        /* Footer */
         footer {
             border-top: 1px solid var(--border);
-            padding: 12px 32px;
+            padding: 16px;
             text-align: center;
-            font-size: 0.7rem;
+            font-size: 0.78rem;
             color: var(--text-dim);
-            font-style: italic
+            background: var(--bg-alt);
         }
 
             footer a {
-                color: var(--gold-dim);
-                text-decoration: none
+                color: var(--gold);
+                text-decoration: none;
+                font-weight: 500;
             }
 
-        @media(max-width:768px) {
+                footer a:hover {
+                    text-decoration: underline;
+                }
+
+        /* ==========================================================================
+           9. RESPONSIVE DESIGN
+           ========================================================================== */
+        @media (max-width: 960px) {
             main {
                 grid-template-columns: 1fr;
-                padding: 16px
             }
 
-            h1 {
-                font-size: 1.2rem
+            .panel {
+                position: static;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 16px;
             }
 
-            .modal {
-                max-height: 95vh
+            .preview-wrap {
+                padding: 16px;
             }
 
-            .prints-grid {
-                grid-template-columns: repeat(auto-fill,minmax(140px,1fr))
+            #preview-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 16px;
             }
         }
     </style>
@@ -763,13 +989,13 @@
         <div class="modal">
             <div class="modal-header">
                 <div>
-                    <div class="modal-title">Seleccionar arte</div>
+                    <div class="modal-title">Catálogo de Impresiones</div>
                     <div class="modal-card-name" id="modal-card-name">—</div>
                 </div>
-                <button class="btn btn-ghost" onclick="closeModal()">✕ Cerrar</button>
+                <button class="header-btn" onclick="closeModal()">✕</button>
             </div>
             <div class="modal-controls">
-                <label for="modal-lang">Idioma de esta carta:</label>
+                <label for="modal-lang">Localización:</label>
                 <select class="modal-lang-select" id="modal-lang" onchange="onModalLangChange()">
                     <option value="en">🇬🇧 English</option>
                     <option value="es">🇪🇸 Español</option>
@@ -784,36 +1010,56 @@
                     <option value="zht">🇹🇼 中文繁體</option>
                     <option value="ph">☣ Phyrexian</option>
                 </select>
-                <div class="modal-count" id="modal-print-count"></div>
+                <div class="modal-count" id="modal-print-count" style="margin-left:auto; font-size:0.8rem; color:var(--text-muted)"></div>
             </div>
             <div class="modal-body">
                 <div class="prints-grid" id="prints-grid">
-                    <div class="prints-loading"><div class="spinner"></div> Cargando…</div>
+                    <div class="prints-loading" style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">
+                        <div class="spinner-ring" style="margin:0 auto 12px;"></div> Consultando Scryfall...
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-                <button class="btn btn-gold" id="btn-apply" onclick="applySelection()" style="width:auto;padding:9px 28px" disabled>✓ Usar esta impresión</button>
+            <div class="modal-footer" style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; background:var(--bg-alt);">
+                <button class="header-btn" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-gold" id="btn-apply" onclick="applySelection()" style="width:auto; padding:8px 24px;" disabled>Confirmar Arte</button>
             </div>
         </div>
     </div>
 
     <header>
-        <div class="logo-icon"></div>
-        <div><h1>MTG PROXY <span>generador de PDFs para imprimir</span></h1></div>
+        <div class="brand">
+            <div class="logo-icon"></div>
+            <div>
+                <h1>MTG Forge <span>Premium Proxy Studio</span></h1>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="header-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg> Importar</button>
+            <button class="header-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg></button>
+            <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">
+                <span id="theme-icon">🌙</span> <span id="theme-label">Oscuro</span>
+            </button>
+        </div>
     </header>
 
     <main>
         <div class="panel">
-            <div>
-                <label class="field-label">Lista del mazo (formato Arena)</label>
-                <textarea id="deck-input" placeholder="4 Lightning Bolt&#10;4 Monastery Swiftspear&#10;4 Goblin Guide&#10;4 Eidolon of the Great Revel&#10;..."></textarea>
+            <div class="visual-steps">
+                <div class="step-item active" id="step-1"><span class="step-num">1</span> Paste Decklist</div>
+                <div class="step-item" id="step-2"><span class="step-num">2</span> Load Cards</div>
+                <div class="step-item" id="step-3"><span class="step-num">3</span> Customize Arts</div>
+                <div class="step-item" id="step-4"><span class="step-num">4</span> Build PDF</div>
             </div>
 
-            <div>
-                <label class="field-label" for="global-lang">Idioma global</label>
+            <div class="control-group">
+                <label class="field-label">Listado del Mazo (Formato Arena / MTGO)</label>
+                <textarea id="deck-input" placeholder="4 Lightning Bolt&#10;4 Monastery Swiftspear&#10;1 Sol Ring&#10;..."></textarea>
+            </div>
+
+            <div class="control-group">
+                <label class="field-label" for="global-lang">Idioma de Búsqueda Principal</label>
                 <select id="global-lang">
-                    <option value="en">🇬🇧 English (por defecto)</option>
+                    <option value="en">🇬🇧 English (Recomendado)</option>
                     <option value="es">🇪🇸 Español</option>
                     <option value="fr">🇫🇷 Français</option>
                     <option value="de">🇩🇪 Deutsch</option>
@@ -826,34 +1072,85 @@
                     <option value="zht">🇹🇼 中文繁體</option>
                     <option value="ph">☣ Phyrexian</option>
                 </select>
-                <div class="hint" style="margin-top:6px">Si no hay traducción disponible, usa inglés automáticamente. Haz clic en cualquier carta del preview para cambiar su arte o idioma individualmente.</div>
             </div>
 
-            <div class="ornament">✦ ✦ ✦</div>
+            <div class="control-group">
+                <label class="field-label">Configuración del PDF de Impresión</label>
+                <div class="pdf-options-grid">
+                    <div class="pdf-opt-label">
+                        Escala
+                        <select id="pdf-size"><option value="real">Tamaño Real (100%)</option><option value="fit">Ajustar página</option></select>
+                    </div>
+                    <div class="pdf-opt-label">
+                        Sangrado
+                        <select id="pdf-bleed"><option value="none">Sin Sangrado</option><option value="mm2">2mm Profesional</option></select>
+                    </div>
+                    <div class="pdf-opt-label">
+                        Cartas DFC
+                        <select id="pdf-dfc"><option value="both">Ambas Caras</option><option value="checklist">Solo Frente</option></select>
+                    </div>
+                    <div class="pdf-opt-label">
+                        Guías de Corte
+                        <select id="pdf-marks"><option value="yes">Líneas finas</option><option value="no">Sin marcas</option></select>
+                    </div>
+                    <div class="pdf-opt-label">
+                        Muestreo (DPI)
+                        <select id="pdf-quality"><option value="high">300 DPI High-Res</option><option value="std">150 DPI Fast</option></select>
+                    </div>
+                    <div class="pdf-opt-label">
+                        Papel
+                        <select id="pdf-paper"><option value="a4">A4 Estándar</option><option value="letter">Letter / Carta</option></select>
+                    </div>
+                </div>
+            </div>
 
             <div class="stats">
-                <div><div class="stat-val" id="stat-unique">0</div><div class="stat-lbl">Únicas</div></div>
-                <div><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
-                <div><div class="stat-val" id="stat-pages">0</div><div class="stat-lbl">Páginas</div></div>
+                <div class="stat-block"><div class="stat-val" id="stat-unique">0</div><div class="stat-lbl">Únicas</div></div>
+                <div class="stat-block"><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
+                <div class="stat-block"><div class="stat-val" id="stat-pages">0</div><div class="stat-lbl">Páginas</div></div>
             </div>
 
-            <div class="progress-wrap"><div id="progress-bar"></div></div>
-            <div id="log">Pega una lista y pulsa "Cargar cartas".</div>
+            <div class="control-group" style="gap:10px;">
+                <div class="progress-wrap"><div id="progress-bar"></div></div>
+                <div id="log">Introduce una lista estructurada para inicializar la forja.</div>
+            </div>
 
-            <button class="btn btn-primary" id="btn-load" onclick="loadDeck()">⬡ &nbsp;Cargar cartas</button>
-            <button class="btn btn-gold" id="btn-pdf" onclick="generatePDF()" disabled>↓ &nbsp;Descargar PDF</button>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:auto;">
+                <button class="btn btn-primary" id="btn-load" onclick="loadDeck()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" /></svg> Sincronizar Cartas
+                </button>
+                <button class="btn btn-gold" id="btn-pdf" onclick="generatePDF()" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg> Generar Archivo de Forja
+                </button>
+            </div>
         </div>
 
         <div class="preview-wrap">
-            <div class="preview-header">
-                <span class="preview-title">Vista previa · clic en carta para cambiar arte / idioma</span>
-                <span class="preview-title" id="preview-count" style="color:var(--gold)"></span>
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="loading-card">
+                    <div class="spinner-ring"></div>
+                    <div class="modal-title" style="margin-top:8px;">Procesando Datos</div>
+                    <div class="loading-text" id="loading-text" style="font-size:0.85rem; color:var(--text-muted); font-style:italic;">Indexando elementos multimedia...</div>
+                    <div class="progress-wrap" style="width:160px; margin-top:4px;"><div class="loading-prog-bar" id="loading-prog-bar" style="height:100%; width:0%; background:var(--gold); transition:width 0.2s;"></div></div>
+                </div>
             </div>
-            <div id="preview-grid"><div class="empty-state">Aquí aparecerán las cartas cargadas</div></div>
+
+            <div class="preview-surface">
+                <div class="preview-header">
+                    <span class="preview-title">Mesa de trabajo y composición</span>
+                    <span class="preview-title" id="preview-count" style="color:var(--gold); font-weight:700;"></span>
+                </div>
+                <div id="preview-grid">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🃏</div>
+                        <span style="font-size:0.9rem;">El estudio está listo. Importa un mazo competitivo para previsualizar los assets.</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
-    <footer>Imágenes vía <a href="https://scryfall.com" target="_blank">Scryfall API</a> · Solo para uso personal y educativo</footer>
+    <footer>Estructura multimedia servida vía <a href="https://scryfall.com" target="_blank">Scryfall Engine</a>. Studio de uso personal y testeo de barajas.</footer>
 
     <script>
         const LANG_NAMES = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', it: 'IT', pt: 'PT', ja: 'JA', ko: 'KO', ru: 'RU', zhs: 'ZHS', zht: 'ZHT', ph: 'PH' };
@@ -862,8 +1159,23 @@
         const modal = { cardIndex: -1, selectedPrintId: null, prints: [], currentLang: 'en' };
 
         function getGlobalLang() { return document.getElementById('global-lang').value }
-        function setLog(msg, type = '') { const el = document.getElementById('log'); el.textContent = msg; el.className = type }
-        function setProgress(pct) { document.getElementById('progress-bar').style.width = pct + '%' }
+
+        function setLog(msg, type = '') {
+            const el = document.getElementById('log');
+            el.textContent = msg;
+            el.className = type;
+
+            // Sincronizar Pasos UX según estado del log
+            if (type === 'error') {
+                document.getElementById('step-2').classList.remove('active');
+            }
+        }
+
+        function setProgress(pct) {
+            document.getElementById('progress-bar').style.width = pct + '%';
+            const pb = document.getElementById('loading-prog-bar');
+            if (pb) pb.style.width = pct + '%';
+        }
 
         function updateStats(cards) {
             const unique = cards.length;
@@ -872,18 +1184,21 @@
             document.getElementById('stat-unique').textContent = unique;
             document.getElementById('stat-total').textContent = total;
             document.getElementById('stat-pages').textContent = pages;
-            document.getElementById('preview-count').textContent = total > 0 ? `${total} carta${total !== 1 ? 's' : ''} · ${pages} pág.` : '';
+            document.getElementById('preview-count').textContent = total > 0 ? `${total} ASSETS · ${pages} PÁG.` : '';
+
+            // Avanzar pasos visuales automáticamente
+            if (unique > 0) {
+                document.getElementById('step-1').classList.add('active');
+                document.getElementById('step-2').classList.add('active');
+            } else {
+                document.getElementById('step-2').classList.remove('active');
+                document.getElementById('step-3').classList.remove('active');
+                document.getElementById('step-4').classList.remove('active');
+            }
         }
 
         function normalizeCardName(name) {
-            return String(name)
-                .normalize('NFKD')
-                .replace(/[''`´]/g, "'")
-                .replace(/[\u2010-\u2015\u2212]/g, "-")
-                .replace(/\s*\/\/\s*/g, " // ")
-                .replace(/\s+/g, " ")
-                .trim()
-                .toLowerCase();
+            return String(name).normalize('NFKD').replace(/[''`´]/g, "'").replace(/[\u2010-\u2015\u2212]/g, "-").replace(/\s*\/\/\s*/g, " // ").replace(/\s+/g, " ").trim().toLowerCase();
         }
 
         function parseArena(text) {
@@ -894,13 +1209,7 @@
                 line = line.replace(/\s+\([A-Z0-9]+\)\s*\d*$/i, '').trim();
                 const m = line.match(/^(\d+)[xX]?\s+(.+?)\s*$/);
                 let qty, name;
-                if (m) {
-                    qty = parseInt(m[1], 10);
-                    name = m[2].trim();
-                } else if (line.length > 1) {
-                    qty = 1;
-                    name = line;
-                } else continue;
+                if (m) { qty = parseInt(m[1], 10); name = m[2].trim(); } else if (line.length > 1) { qty = 1; name = line; } else continue;
                 name = name.replace(/\s+\/\/\s+/g, ' // ').replace(/\s+\/\s+/g, ' // ');
                 name = name.split(' // ')[0].trim();
                 if (qty > 0 && name) result.push({ qty, name });
@@ -918,12 +1227,8 @@
         async function fetchCollectionBatch(names) {
             const cleaned = names.map(n => String(n).trim()).filter(Boolean);
             const body = JSON.stringify({ identifiers: cleaned.map(name => ({ name })) });
-            const res = await fetchWithRetry('https://api.scryfall.com/cards/collection', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body
-            });
-            if (!res || !res.ok) throw new Error('Error en batch collection (' + (res ? res.status : 'sin respuesta') + ')');
+            const res = await fetchWithRetry('https://api.scryfall.com/cards/collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+            if (!res || !res.ok) throw new Error('Error en batch collection');
             const data = await res.json();
             const map = new Map();
             for (const card of (data.data || [])) {
@@ -934,746 +1239,401 @@
                     map.set(firstFaceKey, card);
                 }
             }
-            for (const nf of (data.not_found || [])) {
-                if (!nf.name) continue;
-                try {
-                    await new Promise(r => setTimeout(r, 100));
-                    const rRes = await fetchWithRetry('https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(nf.name));
-                    if (rRes && rRes.ok) {
-                        const rCard = await rRes.json();
-                        map.set(normalizeCardName(nf.name), rCard);
-                        map.set(normalizeCardName(rCard.name), rCard);
-                        if (rCard.name.includes(' // ')) {
-                            map.set(normalizeCardName(rCard.name.split(' // ')[0].trim()), rCard);
-                        }
-                    }
-                } catch (e) { }
-            }
             return { map };
         }
 
-        // Busca un chunk de nombres en el idioma usando OR — 1 request por batch.
-        // Scryfall acepta: (!"Sol Ring" OR !"Force of Will") lang:es
-        // Devuelve Map<normalizedName → cardData>
         async function fetchCardLangBatch(names, lang, signal) {
             const orParts = names.map(n => '!"' + n + '"').join(' OR ');
             const q = '(' + orParts + ') lang:' + lang;
-            const url = 'https://api.scryfall.com/cards/search?q=' + encodeURIComponent(q) +
-                        '&unique=cards&order=released&dir=desc';
-            // unique=cards: devuelve 1 resultado por carta, no múltiples impresiones
-            const opts = signal ? { signal } : {};
-            const res = await fetchWithRetry(url, opts);
+            const url = 'https://api.scryfall.com/cards/search?q=' + encodeURIComponent(q) + '&unique=cards&order=released&dir=desc';
+            const res = await fetchWithRetry(url, signal ? { signal } : {});
             const result = new Map();
             if (!res || !res.ok) return result;
-
             const data = await res.json();
-
-            // Construir lookup de nombres buscados (normalizados)
             const nameSet = new Map(names.map(n => [normalizeCardName(n), n]));
-
             for (const card of (data.data || [])) {
                 if (!hasValidImage(card)) continue;
-
-                // Scryfall devuelve el nombre en inglés en card.name siempre.
-                // El nombre en el idioma local está en card.printed_name (si difiere).
-                const normCardEN  = normalizeCardName(card.name);
-                // Para DFC, Scryfall devuelve "Cara A // Cara B" — probar también solo cara A
-                const normFace1   = normalizeCardName(card.name.split(' // ')[0]);
-
-                // Buscar coincidencia exacta contra los nombres pedidos
+                const normCardEN = normalizeCardName(card.name);
+                const normFace1 = normalizeCardName(card.name.split(' // ')[0]);
                 let matchKey = null;
-                if (nameSet.has(normCardEN))  matchKey = normCardEN;
+                if (nameSet.has(normCardEN)) matchKey = normCardEN;
                 else if (nameSet.has(normFace1)) matchKey = normFace1;
-
-                if (matchKey && !result.has(matchKey)) {
-                    result.set(matchKey, card);
-                }
+                if (matchKey && !result.has(matchKey)) { result.set(matchKey, card); }
             }
             return result;
         }
 
-        // Wrapper individual (para compatibilidad con applySelection)
         async function fetchCardLang(name, lang, signal) {
             const map = await fetchCardLangBatch([name], lang, signal);
             return map.get(normalizeCardName(name)) || null;
         }
 
-        function extractImageUrl(data, size = 'normal') {
-            if (data.image_uris?.[size]) return data.image_uris[size];
-            if (data.card_faces?.[0]?.image_uris?.[size]) return data.card_faces[0].image_uris[size];
-            return null;
-        }
-
-        function extractFace2Url(data, size = 'normal') {
-            if (data.card_faces?.length >= 2 && data.card_faces[1]?.image_uris?.[size]) {
-                return data.card_faces[1].image_uris[size];
-            }
-            return null;
-        }
-
-        function extractFace2Name(data) {
-            if (data.card_faces?.length >= 2) return data.card_faces[1].name || null;
-            return null;
-        }
-
-        async function fetchPrints(name, lang = 'en') {
-            const key = `${name}|${lang}`;
-            if (state.printsCache[key]) return state.printsCache[key];
-            const langFilter = lang !== 'en' ? ` lang:${lang}` : '';
-            const q = `!"${name}"${langFilter}`;
-            const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(q)}&unique=prints&order=released&dir=asc`;
-            const res = await fetchWithRetry(url);
-            let prints = [];
-            if (res && res.ok) {
-                const data = await res.json();
-                prints = (data.data || []).map(c => ({
-                    id: c.id,
-                    imageUrl: extractImageUrl(c, 'small'),
-                    imageUrl2: extractFace2Url(c, 'small'),
-                    pdfImageUrl: extractImageUrl(c, 'normal'),
-                    pdfImageUrl2: extractFace2Url(c, 'normal'),
-                    face2Name: extractFace2Name(c),
-                    setName: c.set_name,
-                    setCode: c.set.toUpperCase(),
-                    year: c.released_at ? c.released_at.slice(0, 4) : '—',
-                    artist: c.artist || '—',
-                    lang: c.lang,
-                    cardName: c.printed_name || c.name
-                })).filter(p => p.imageUrl);
-            }
-            if (prints.length === 0 && lang !== 'en') return fetchPrints(name, 'en');
-            state.printsCache[key] = prints;
-            return prints;
-        }
-
-        // Cache-busting para evitar que el navegador sirva versión cacheada sin CORS.
-        // Incluye timeout y reintentos para no colgarse si Scryfall tarda.
-        async function fetchImageBlob(url, retries = 3, timeoutMs = 20000) {
-            if (imageBlobCache.has(url)) return imageBlobCache.get(url);
-            const fetchUrl = url + (url.includes('?') ? '&' : '?') + '_cb=' + Date.now();
-
-            for (let attempt = 0; attempt <= retries; attempt++) {
-                const ctrl = new AbortController();
-                const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-                try {
-                    const res = await fetch(fetchUrl, { signal: ctrl.signal });
-                    clearTimeout(timer);
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    const blob = await res.blob();
-                    imageBlobCache.set(url, blob);
-                    return blob;
-                } catch (e) {
-                    clearTimeout(timer);
-                    if (attempt === retries) throw new Error('No se pudo descargar imagen tras ' + retries + ' intentos: ' + e.message);
-                    // Espera exponencial antes de reintentar
-                    await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
-                }
+        async function fetchWithRetry(url, options = {}, retries = 2) {
+            for (let i = 0; i <= retries; i++) {
+                try { return await fetch(url, options); }
+                catch (err) { if (i === retries) throw err; await new Promise(r => setTimeout(r, 400)); }
             }
         }
 
-        function renderPreview(cards) {
+        function extractImageUrl(card) {
+            if (!card) return '';
+            if (card.image_uris && card.image_uris.normal) return card.image_uris.normal;
+            if (card.card_faces && card.card_faces[0] && card.card_faces[0].image_uris) {
+                return card.card_faces[0].image_uris.normal;
+            }
+            return '';
+        }
+
+        function isDFC(card) {
+            return card && card.card_faces && card.card_faces[1] && card.card_faces[0].image_uris === undefined;
+        }
+
+        function showLoadingOverlay(msg) {
+            const ov = document.getElementById('loading-overlay');
+            const tx = document.getElementById('loading-text');
+            if (ov) ov.classList.add('active');
+            if (tx && msg) tx.textContent = msg;
+        }
+
+        function hideLoadingOverlay() {
+            const ov = document.getElementById('loading-overlay');
+            if (ov) ov.classList.remove('active');
+            setProgress(0);
+        }
+
+        // Renderizado Dinámico con Componentes UI Premium y Efecto Hover Showcase
+        function renderPreview() {
             const grid = document.getElementById('preview-grid');
-            if (!cards.length) {
-                grid.innerHTML = `<div class="empty-state">Aquí aparecerán las cartas cargadas</div>`;
+            grid.innerHTML = '';
+            if (state.cards.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🃏</div><span>El estudio está listo. Importa un mazo competitivo para previsualizar los assets.</span></div>`;
                 return;
             }
 
-            const fragment = document.createDocumentFragment();
-            let dragSrc = null;
+            state.cards.forEach((item, index) => {
+                const block = document.createElement('div');
+                block.className = 'card-thumb';
+                block.setAttribute('onclick', `openModal(${index})`);
 
-            cards.forEach((card, i) => {
-                const div = document.createElement('div');
-                div.className = 'card-thumb';
-                div.dataset.cardIdx = i; // para que upgradePreviewHQ encuentre el thumb correcto
-                div.draggable = true;
-
-                if (card.error) {
-                    div.innerHTML = `
-                <div class="card-error-thumb">
-                  ⚠ ${card.name}
-                  <span>${card.error}</span>
-                </div>
-              `;
-                    const rm = document.createElement('div');
-                    rm.className = 'card-remove-btn';
-                    rm.textContent = '✕';
-                    rm.addEventListener('click', e => { e.stopPropagation(); removeCard(i); });
-                    div.appendChild(rm);
+                if (item.error) {
+                    block.innerHTML = `<div style="padding:20px; color:var(--error); font-size:0.8rem; text-align:center;"><strong>Error</strong><br>${item.reqName}<br><span style="color:var(--text-dim)">${item.error}</span></div>`;
                 } else {
-                    const langBadge = card.lang && card.lang !== 'en' ? `<div class="card-lang-badge">${LANG_NAMES[card.lang] || card.lang}</div>` : '';
-                    const dfcBadge = card.imageUrl2 ? `<div class="card-dfc-badge" title="Doble cara: ${card.face2Name || 'cara 2'}">⟲ ${card.face2Name ? card.face2Name.split(',')[0].trim() : '2 caras'}</div>` : '';
+                    const imgUrl = extractImageUrl(item.data);
+                    const isDoubleFace = isDFC(item.data);
+                    const badgeLang = item.lang !== 'en' ? `<span class="card-badge-ui">${item.lang.toUpperCase()}</span>` : '';
+                    const badgeDfc = isDoubleFace ? `<span class="card-badge-ui" style="background:#4c1d95; border-color:#7c3aed;">DFC</span>` : '';
+                    const setCode = item.data.set ? item.data.set.toUpperCase() : '---';
 
-                    div.innerHTML = `
-                <img src="${card.imageUrl}" alt="${card.name}" loading="lazy" decoding="async"/>
-                <div class="card-badge" title="Clic para editar cantidad">×${card.qty}</div>
-                <div class="card-edit-btn">✎ arte</div>
-                ${langBadge}
-                ${dfcBadge}
-              `;
-
-                    div.addEventListener('click', (e) => {
-                        if (e.target.classList.contains('card-badge') || e.target.classList.contains('card-remove-btn') || e.target.classList.contains('qty-input')) return;
-                        openModal(i);
-                    });
-
-                    const badge = div.querySelector('.card-badge');
-                    badge.addEventListener('click', e => { e.stopPropagation(); editQty(div, badge, i); });
-
-                    const rm = document.createElement('div');
-                    rm.className = 'card-remove-btn';
-                    rm.textContent = '✕';
-                    rm.addEventListener('click', e => { e.stopPropagation(); removeCard(i); });
-                    div.appendChild(rm);
+                    block.innerHTML = `
+                            <img src="${imgUrl}" alt="${item.data.name}" loading="lazy" />
+                            <div class="card-meta-overlay">
+                                <div class="card-info-top">
+                                    <span class="card-badge-ui" style="background:var(--gold-dim); color:#000; padding:2px 6px;">x${item.qty}</span>
+                                    <button class="card-remove-btn" onclick="event.stopPropagation(); removeCard(${index})">✕</button>
+                                </div>
+                                <div class="card-info-bottom">
+                                    <div class="card-title-text">${item.data.name}</div>
+                                    <div style="display:flex; justify-content:between; align-items:center; width:100%;">
+                                        <span class="card-set-text">${setCode}</span>
+                                        <div style="display:flex; gap:4px; margin-left:auto;">${badgeLang}${badgeDfc}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
                 }
-
-                div.addEventListener('dragstart', e => { dragSrc = i; div.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
-                div.addEventListener('dragend', () => { div.classList.remove('dragging'); });
-                div.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; div.classList.add('drag-over'); });
-                div.addEventListener('dragleave', () => { div.classList.remove('drag-over'); });
-                div.addEventListener('drop', e => {
-                    e.preventDefault();
-                    div.classList.remove('drag-over');
-                    if (dragSrc === null || dragSrc === i) return;
-                    const moved = state.cards.splice(dragSrc, 1)[0];
-                    state.cards.splice(i, 0, moved);
-                    updateStats(state.cards.filter(c => !c.error));
-                    renderPreview(state.cards);
-                });
-                fragment.appendChild(div);
+                grid.appendChild(block);
             });
-            grid.replaceChildren(fragment);
-        }
 
-        function removeCard(i) {
-            state.cards.splice(i, 1);
-            updateStats(state.cards.filter(c => !c.error));
-            renderPreview(state.cards);
-            setLog(state.cards.length ? 'Carta eliminada.' : 'Lista vacía.', state.cards.length ? '' : 'error');
-        }
-
-        function editQty(thumbEl, badge, i) {
-            const input = document.createElement('input');
-            input.type = 'number'; input.min = '1'; input.max = '99';
-            input.value = state.cards[i].qty;
-            input.className = 'qty-input';
-            badge.replaceWith(input);
-            input.focus(); input.select();
-
-            const commit = () => {
-                const v = parseInt(input.value, 10);
-                if (v > 0) state.cards[i].qty = v;
-                updateStats(state.cards.filter(c => !c.error));
-                renderPreview(state.cards);
-            };
-            input.addEventListener('blur', commit);
-            input.addEventListener('keydown', e => {
-                if (e.key === 'Enter') input.blur();
-                if (e.key === 'Escape') { state.cards[i].qty = state.cards[i].qty; renderPreview(state.cards); }
-            });
-        }
-
-        async function fetchWithRetry(url, opts = {}, retries = 3, baseDelay = 500, timeoutMs = 10000) {
-            const externalSignal = opts.signal;
-            for (let attempt = 0; attempt <= retries; attempt++) {
-                if (externalSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
-                const timeoutCtrl = new AbortController();
-                const timer = setTimeout(() => timeoutCtrl.abort(), timeoutMs * (attempt + 1));
-                const onExtAbort = () => timeoutCtrl.abort();
-                externalSignal?.addEventListener('abort', onExtAbort, { once: true });
-                try {
-                    const res = await fetch(url, { ...opts, signal: timeoutCtrl.signal });
-                    clearTimeout(timer);
-                    externalSignal?.removeEventListener('abort', onExtAbort);
-                    if (res.status === 429) {
-                        // Leer Retry-After real de Scryfall (en segundos)
-                        const retryAfter = parseInt(res.headers.get('Retry-After') || '0', 10);
-                        const wait = retryAfter > 0
-                            ? retryAfter * 1000 + 500
-                            : baseDelay * Math.pow(2, attempt);
-                        console.warn('429 — esperando ' + Math.round(wait / 1000) + 's');
-                        await new Promise(r => setTimeout(r, wait));
-                        continue;
-                    }
-                    return res;
-                } catch (e) {
-                    clearTimeout(timer);
-                    externalSignal?.removeEventListener('abort', onExtAbort);
-                    if (externalSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
-                    if (attempt === retries) throw e;
-                    await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, attempt)));
-                }
+            if (state.cards.length > 0) {
+                document.getElementById('step-3').classList.add('active');
             }
-        }
-
-        async function runWithConcurrency(tasks, limit) {
-            const results = []; let idx = 0;
-            async function worker() { while (idx < tasks.length) { const i = idx++; results[i] = await tasks[i](); } }
-            await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
-            return results;
         }
 
         async function loadDeck() {
+            if (state.loading) return;
+            const input = document.getElementById('deck-input').value;
+            const parsed = parseArena(input);
+            if (!parsed.length) { setLog('La lista no contiene cartas legibles.', 'error'); return; }
+
+            state.loading = true;
             if (state.abortController) state.abortController.abort();
-            const controller = new AbortController();
-            state.abortController = controller;
+            state.abortController = new AbortController();
+            const signal = state.abortController.signal;
 
-            const text = document.getElementById('deck-input').value.trim();
-            const parsed = parseArena(text);
-            if (!parsed.length) { setLog('No se detectaron cartas. Revisa el formato (ej: "4 Lightning Bolt").', 'error'); return }
-            const lang = getGlobalLang();
+            showLoadingOverlay('Iniciando forja de cartas...');
+            setLog('Buscando información en Scryfall...', '');
+            setProgress(10);
 
-            state.loading = true; state.cards = [];
-            document.getElementById('btn-load').disabled = true;
-            document.getElementById('btn-pdf').disabled = true;
-            setProgress(0); renderPreview([]); updateStats([]);
-
-            const uniqueNames = [...new Map(parsed.map(p => [normalizeCardName(p.name), p.name])).values()];
-            const CHUNK = 75;
-            const enMap = new Map();
-
-            setLog(`Fase 1/2: obteniendo ${uniqueNames.length} cartas…`);
-
-            // Intentar batch primero (1-2 requests para todo el mazo)
-            // Si falla, fallback a requests individuales automáticamente
-            let batchOk = false;
             try {
-                for (let i = 0; i < uniqueNames.length; i += CHUNK) {
-                    if (controller.signal.aborted) break;
-                    const chunk = uniqueNames.slice(i, i + CHUNK);
-                    const { map } = await fetchCollectionBatch(chunk);
-                    for (const [k, v] of map) enMap.set(k, v);
-                    setProgress(Math.round((Math.min(i + CHUNK, uniqueNames.length)) / uniqueNames.length * 40));
+                const targetLang = getGlobalLang();
+                const uniqueNames = parsed.map(c => c.name);
+
+                // Muestra esqueleto animado mientras carga el batch
+                const grid = document.getElementById('preview-grid');
+                grid.innerHTML = Array(Math.min(uniqueNames.length, 8)).fill('<div class="skeleton-card"></div>').join('');
+
+                let baseMap = new Map();
+                const chunks = [];
+                for (let i = 0; i < uniqueNames.length; i += 75) chunks.push(uniqueNames.slice(i, i + 75));
+                for (const chunk of chunks) {
+                    if (signal.aborted) return;
+                    const r = await fetchCollectionBatch(chunk);
+                    for (const [k, v] of r.map) baseMap.set(k, v);
                 }
-                batchOk = true;
-            } catch (e) {
-                console.warn('Batch falló, usando fallback individual:', e.message);
-            }
 
-            // Fallback: buscar individualmente las que no se cargaron por batch
-            if (!batchOk || enMap.size < uniqueNames.length) {
-                const missing = uniqueNames.filter(n => !enMap.has(normalizeCardName(n)));
-                if (missing.length > 0) {
-                    setLog(`Buscando ${missing.length} carta${missing.length !== 1 ? 's' : ''} individualmente…`);
-                    let done = 0;
-                    const fallbackTasks = missing.map(name => async () => {
-                        if (controller.signal.aborted) return;
-                        try {
-                            const res = await fetchWithRetry(
-                                'https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(name),
-                                controller.signal ? { signal: controller.signal } : {}
-                            );
-                            if (res && res.ok) {
-                                const card = await res.json();
-                                const key = normalizeCardName(card.name);
-                                enMap.set(key, card);
-                                // DFC: guardar también por primera cara
-                                if (card.name.includes(' // ')) {
-                                    enMap.set(normalizeCardName(card.name.split(' // ')[0].trim()), card);
-                                }
-                                // También indexar por nombre buscado
-                                enMap.set(normalizeCardName(name), card);
-                            }
-                        } catch (e) {
-                            if (!controller.signal?.aborted)
-                                console.warn('Fallback error "' + name + '":', e.message);
-                        }
-                        done++;
-                        setProgress(Math.round(done / missing.length * 40));
-                        setLog(`Cargando ${done}/${missing.length}…`);
-                    });
-                    // Serial con pausa — el fallback también puede saturar si va en paralelo
-                    await runWithConcurrency(fallbackTasks, 2);
-                }
-            }
+                setProgress(40);
+                const finalCards = [];
+                const langNeeded = new Map();
 
-            if (controller.signal.aborted) { state.loading = false; return; }
-
-            const langMap = new Map();
-
-            if (lang !== 'en') {
-                const needsLang = uniqueNames.filter(n => enMap.get(normalizeCardName(n)));
-
-                // Separar las que ya tenemos en cache de las que hay que buscar
-                const toFetch = [];
-                for (const name of needsLang) {
-                    const cacheKey = normalizeCardName(name) + '|' + lang;
-                    if (state.langCache[cacheKey]) {
-                        langMap.set(normalizeCardName(name), state.langCache[cacheKey]);
+                parsed.forEach(p => {
+                    const norm = normalizeCardName(p.name);
+                    const found = baseMap.get(norm);
+                    if (!found) {
+                        finalCards.push({ reqName: p.name, qty: p.qty, error: 'Carta no encontrada en base de datos Scryfall.', lang: 'en' });
                     } else {
-                        toFetch.push(name);
-                    }
-                }
-
-                const cached = needsLang.length - toFetch.length;
-                setLog(`Fase 2/2: ${LANG_NAMES[lang] || lang} — ${cached} en caché, buscando ${toFetch.length}...`);
-
-                if (toFetch.length > 0) {
-                    // Agrupar en batches de 12 — cada batch = 1 request OR en vez de 12 individuales
-                    // Ej: (!"Sol Ring" OR !"Lightning Bolt" OR ...) lang:es
-                    const BATCH_SIZE = 12;
-                    const batches = [];
-                    for (let i = 0; i < toFetch.length; i += BATCH_SIZE) {
-                        batches.push(toFetch.slice(i, i + BATCH_SIZE));
-                    }
-
-                    let done = 0, errors = 0;
-                    for (const batch of batches) {
-                        if (controller.signal.aborted) break;
-                        try {
-                            const batchMap = await fetchCardLangBatch(batch, lang, controller.signal);
-                            for (const name of batch) {
-                                const key = normalizeCardName(name);
-                                const card = batchMap.get(key);
-                                if (card) {
-                                    langMap.set(key, card);
-                                    state.langCache[key + '|' + lang] = card;
-                                }
-                            }
-                        } catch (e) {
-                            if (controller.signal.aborted) break;
-                            errors++;
-                            console.warn('Error en batch lang:', e.message);
+                        finalCards.push({ reqName: p.name, qty: p.qty, data: found, lang: 'en' });
+                        if (targetLang !== 'en') {
+                            if (!langNeeded.has(targetLang)) langNeeded.set(targetLang, []);
+                            langNeeded.get(targetLang).push(found.name);
                         }
-                        done += batch.length;
-                        setProgress(40 + Math.round(done / toFetch.length * 40));
-                        setLog(`Buscando ${LANG_NAMES[lang] || lang}... ${Math.min(done, toFetch.length)}/${toFetch.length}${errors ? ' (' + errors + ' lotes con error)' : ''}`);
-                        // 400ms entre batches — cada batch ya hace 1 sola request
-                        if (!controller.signal.aborted) await new Promise(r => setTimeout(r, 400));
                     }
-                }
-            }
-
-            if (controller.signal.aborted) { state.loading = false; return; }
-
-            let errors = 0;
-            for (const { qty, name } of parsed) {
-                const key = normalizeCardName(name);
-                const data = langMap.get(key) || enMap.get(key);
-                if (!data) {
-                    errors++;
-                    state.cards.push({ qty, name, imageUrl: null, lang, printId: null, error: 'No encontrada en Scryfall' });
-                    continue;
-                }
-                const imageUrl = extractImageUrl(data, 'small');
-                const pdfImageUrl = extractImageUrl(data, 'normal');
-                if (!imageUrl) {
-                    errors++;
-                    state.cards.push({ qty, name, imageUrl: null, lang, printId: null, error: 'Sin imagen disponible' });
-                    continue;
-                }
-
-                const imageUrl2 = extractFace2Url(data, 'small');
-                const pdfImageUrl2 = extractFace2Url(data, 'normal');
-                const face2Name = extractFace2Name(data);
-
-                state.cards.push({
-                    qty,
-                    name: data.name || name,
-                    imageUrl,       // small  — preview inicial (rápido)
-                    imageUrlHQ: pdfImageUrl,  // normal — preview HQ (se carga después)
-                    pdfImageUrl,
-                    imageUrl2,
-                    imageUrl2HQ: pdfImageUrl2,
-                    pdfImageUrl2,
-                    face2Name,
-                    lang: data.lang || lang,
-                    printId: data.id,
-                    error: false,
-                    hqLoaded: false,
                 });
+
+                if (targetLang !== 'en' && langNeeded.has(targetLang)) {
+                    showLoadingOverlay(`Traduciendo catálogo al idioma seleccionado (${targetLang.toUpperCase()})...`);
+                    const namesToFetch = langNeeded.get(targetLang);
+                    const langMap = await fetchCardLangBatch(namesToFetch, targetLang, signal);
+
+                    finalCards.forEach(c => {
+                        if (c.data && !c.error) {
+                            const match = langMap.get(normalizeCardName(c.data.name));
+                            if (match) { c.data = match; c.lang = targetLang; }
+                        }
+                    });
+                }
+
+                state.cards = finalCards;
+                setLog(`Sincronización completada con éxito. ${state.cards.length} cartas procesadas.`, 'ok');
+                document.getElementById('btn-pdf').disabled = false;
+                document.getElementById('step-4').classList.add('active');
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                setLog('Fallo crítico en la consulta del API: ' + err.message, 'error');
+            } finally {
+                state.loading = false;
+                hideLoadingOverlay();
+                renderPreview();
             }
-
-            setProgress(100);
-            renderPreview(state.cards);
-            updateStats(state.cards.filter(c => !c.error));
-
-            const totalOk = state.cards.filter(c => !c.error).length;
-            if (totalOk === 0) { setLog('No se pudo cargar ninguna carta. Revisa los nombres.', 'error') }
-            else if (errors > 0) { setLog(`Listo con ${errors} error${errors !== 1 ? 'es' : ''}. Haz clic en una carta para cambiar arte o idioma.`, 'error'); document.getElementById('btn-pdf').disabled = false }
-            else { setLog(`✓ ${totalOk} carta${totalOk !== 1 ? 's' : ''} cargadas. Mejorando calidad…`, 'ok'); document.getElementById('btn-pdf').disabled = false }
-            state.loading = false;
-            document.getElementById('btn-load').disabled = false;
-
-            // Lanzar upgrade HQ en background sin bloquear la UI
-            upgradePreviewHQ(state.cards);
         }
 
-        function debounce(fn, delay) {
-            let t;
-            return (...args) => {
-                clearTimeout(t);
-                t = setTimeout(() => fn(...args), delay);
-            };
+        function removeCard(index) {
+            state.cards.splice(index, 1);
+            updateStats(state.cards);
+            renderPreview();
         }
 
-        async function openModal(i) {
-            const card = state.cards[i];
+        // Control y Lógica de Modales Premium
+        async function openModal(index) {
+            const card = state.cards[index];
             if (!card || card.error) return;
-            modal.cardIndex = i;
-            modal.selectedPrintId = card.printId;
-            modal.currentLang = card.lang || getGlobalLang();
-            modal.prints = [];
-            document.getElementById('modal-card-name').textContent = card.name;
+            modal.cardIndex = index;
+            modal.currentLang = card.lang;
+            modal.selectedPrintId = card.data.id;
+
+            document.getElementById('modal-card-name').textContent = card.data.name;
             document.getElementById('modal-lang').value = modal.currentLang;
-            document.getElementById('btn-apply').disabled = true;
-            document.getElementById('modal-print-count').textContent = '';
             document.getElementById('art-modal').classList.add('open');
-            document.body.style.overflow = 'hidden';
-            await loadPrints(card.name, modal.currentLang);
-        }
 
-        async function loadPrints(name, lang) {
-            const grid = document.getElementById('prints-grid');
-            grid.innerHTML = `<div class="prints-loading"><div class="spinner"></div> Buscando en ${LANG_NAMES[lang] || lang}…</div>`;
-            document.getElementById('modal-print-count').textContent = '';
-            document.getElementById('btn-apply').disabled = true;
-            try {
-                const prints = await fetchPrints(name, lang);
-                modal.prints = prints;
-                if (!prints.length) { grid.innerHTML = `<div class="no-prints">No hay impresiones en este idioma.<br>Prueba con otro.</div>`; return }
-                const langs = [...new Set(prints.map(p => p.lang))];
-                const note = langs.length === 1 && langs[0] !== lang ? ' (mostrando EN como fallback)' : '';
-                document.getElementById('modal-print-count').textContent = `${prints.length} impresión${prints.length !== 1 ? 'es' : ''}${note}`;
-                renderPrints(prints, modal.selectedPrintId);
-            } catch (e) {
-                grid.innerHTML = `<div class="no-prints">Error: ${e.message}</div>`;
-            }
-        }
-
-        function renderPrints(prints, selectedId) {
-            const grid = document.getElementById('prints-grid');
-            grid.innerHTML = '';
-            for (const p of prints) {
-                const div = document.createElement('div');
-                div.className = 'print-card' + (p.id === selectedId ? ' selected' : '');
-                const dfcIndicator = p.imageUrl2 ? '<span style="color:#aa77ff;font-size:0.6rem">⟲ 2 caras</span>' : '';
-                div.innerHTML = `<img src="${p.imageUrl}" alt="${p.cardName}" loading="lazy"/><div class="print-meta"><span class="set-name">${p.setName} ${dfcIndicator}</span><span class="set-detail">${p.setCode} · ${p.year}</span><span class="set-detail">✎ ${p.artist}</span></div>`;
-                div.addEventListener('click', () => selectPrint(p.id));
-                grid.appendChild(div);
-            }
-            document.getElementById('btn-apply').disabled = selectedId === null;
-        }
-
-        function selectPrint(printId) {
-            modal.selectedPrintId = printId;
-            document.getElementById('btn-apply').disabled = false;
-            document.querySelectorAll('.print-card').forEach(el => el.classList.remove('selected'));
-            const idx = modal.prints.findIndex(p => p.id === printId);
-            if (idx >= 0) document.querySelectorAll('.print-card')[idx]?.classList.add('selected');
-        }
-
-        async function onModalLangChange() {
-            const lang = document.getElementById('modal-lang').value;
-            modal.currentLang = lang; modal.selectedPrintId = null; modal.prints = [];
-            const card = state.cards[modal.cardIndex];
-            if (card) await loadPrints(card.name, lang);
-        }
-
-        async function applySelection() {
-            if (modal.selectedPrintId === null || modal.cardIndex < 0) return;
-            const print = modal.prints.find(p => p.id === modal.selectedPrintId);
-            if (!print) return;
-            const btn = document.getElementById('btn-apply');
-            btn.textContent = 'Aplicando…'; btn.disabled = true;
-            const card = state.cards[modal.cardIndex];
-
-            card.imageUrl = print.imageUrl;
-            card.imageUrl2 = print.imageUrl2 || null;
-            card.pdfImageUrl = print.pdfImageUrl;
-            card.pdfImageUrl2 = print.pdfImageUrl2 || null;
-            card.face2Name = print.face2Name || card.face2Name;
-            card._b64 = null;
-            card._b64face2 = null;
-            card._blob = null;
-            card._blob2 = null;
-            card.lang = print.lang || modal.currentLang;
-            card.printId = print.id;
-
-            // Actualizar URLs HQ con las de la nueva impresión
-            card.imageUrlHQ = print.pdfImageUrl || card.pdfImageUrl;
-            card.imageUrl2HQ = print.pdfImageUrl2 || null;
-            card.hqLoaded = false;
-            closeModal();
-            renderPreview(state.cards);
-            setLog(`✓ Arte actualizado: ${card.name} · ${print.setName} (${print.year})`, 'ok');
-            upgradePreviewHQ(state.cards);
+            await loadPrints(card.data.name, modal.currentLang);
         }
 
         function closeModal() {
             document.getElementById('art-modal').classList.remove('open');
-            document.body.style.overflow = '';
-            const btn = document.getElementById('btn-apply');
-            btn.textContent = '✓ Usar esta impresión'; btn.disabled = true;
-        }
-        function closeModalOnOverlay(e) { if (e.target === document.getElementById('art-modal')) closeModal() }
-
-        async function generatePDF() {
-            const { jsPDF } = window.jspdf;
-
-            const unique = state.cards.filter(c => !c.error && c.imageUrl);
-            if (!unique.length) { setLog('No hay cartas válidas para generar el PDF.', 'error'); return }
-
-            setLog('Descargando imágenes…');
-            setProgress(0);
-
-            const concurrency = Math.min(navigator.hardwareConcurrency || 8, 10);
-            let done = 0;
-
-            const tasks = unique.map(card => async () => {
-                try {
-                    if (!card._blob) {
-                        card._blob = await fetchImageBlob(card.pdfImageUrl);
-                    }
-                    if (card.pdfImageUrl2 && !card._blob2) {
-                        card._blob2 = await fetchImageBlob(card.pdfImageUrl2);
-                    }
-                    card._b64 = card._blob;
-                    if (card._blob2) {
-                        card._b64face2 = card._blob2;
-                    }
-                } catch (e) {
-                    console.error("Error al descargar: " + card.name, e);
-                }
-                done++;
-                setProgress(Math.round(done / unique.length * 50));
-            });
-
-            await runWithConcurrency(tasks, concurrency);
-
-            const deck = [];
-            for (const card of state.cards) {
-                if (card.error || !card._b64) continue;
-                const isDFC = !!card.pdfImageUrl2;
-                for (let i = 0; i < card.qty; i++) {
-                    deck.push({ ...card, _useBlob: card._b64, _faceLabel: isDFC ? '◑ C1' : null });
-                    // ARREGLADO: Solo insertar la cara 2 si realmente tenemos una imagen para ella
-                    if (isDFC && card._b64face2) {
-                        deck.push({ ...card, _useBlob: card._b64face2, _faceLabel: '◑ C2' });
-                    }
-                }
-            }
-
-            setLog('Generando PDF…');
-            const PAGE_W = 210, PAGE_H = 297, CARD_W = 63, CARD_H = 88, COLS = 3, ROWS = 3, CPP = 9;
-            const MX = (PAGE_W - COLS * CARD_W) / 2, MY = (PAGE_H - ROWS * CARD_H) / 2;
-            const pdf = new jsPDF({
-                unit: 'mm',
-                format: 'a4',
-                orientation: 'portrait',
-                compress: true
-            });
-
-            for (let i = 0; i < deck.length; i++) {
-                const pos = i % CPP;
-                if (pos === 0 && i > 0) pdf.addPage();
-                const col = pos % COLS, row = Math.floor(pos / COLS);
-                const x = MX + col * CARD_W, y = MY + row * CARD_H;
-
-                // ARREGLADO: try/catch por si alguna imagen está corrupta o el canvas falla
-                try {
-                    const bitmap = await createImageBitmap(deck[i]._useBlob);
-                    const canvas = document.createElement('canvas');
-                    canvas.width = bitmap.width;
-                    canvas.height = bitmap.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(bitmap, 0, 0);
-
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-
-                    pdf.addImage(
-                        dataUrl,
-                        'JPEG',
-                        x,
-                        y,
-                        CARD_W,
-                        CARD_H,
-                        undefined,
-                        'FAST'
-                    );
-                } catch (e) {
-                    console.error("Error renderizando imagen para PDF", e);
-                }
-
-                pdf.setDrawColor(160, 160, 160); pdf.setLineWidth(0.15); pdf.rect(x, y, CARD_W, CARD_H);
-
-                if (deck[i]._faceLabel) {
-                    pdf.setFontSize(5.5);
-                    pdf.setTextColor(180, 140, 255);
-                    pdf.text(deck[i]._faceLabel, x + CARD_W - 1, y + CARD_H - 1.5, { align: 'right' });
-                    pdf.setTextColor(0, 0, 0);
-                }
-                setProgress(50 + Math.round((i + 1) / deck.length * 50));
-            }
-
-            const totalPages = Math.ceil(deck.length / CPP);
-            for (let p = 1; p <= totalPages; p++) {
-                pdf.setPage(p);
-                pdf.setFontSize(6);
-                pdf.setTextColor(140, 130, 110);
-                pdf.text('Imprimir al 100% sin escalar — cartas 63×88 mm (tamaño real) — desactivar "ajustar a página"', PAGE_W / 2, PAGE_H - 4, { align: 'center' });
-                pdf.setTextColor(0, 0, 0);
-            }
-            pdf.save('mtg-proxies.pdf');
-            setProgress(100);
-            const pages = Math.ceil(deck.length / CPP);
-            setLog(`✓ PDF: ${deck.length} carta${deck.length !== 1 ? 's' : ''} en ${pages} página${pages !== 1 ? 's' : ''}.`, 'ok');
-            document.getElementById('btn-pdf').disabled = false;
+            modal.cardIndex = -1;
         }
 
-        // Carga progresiva: reemplaza imágenes small → normal en background
-        // sin bloquear la UI ni rehacer el DOM completo
-        async function upgradePreviewHQ(cards) {
-            const batchId = ++upgradePreviewHQ._id;
-            const valid = cards.filter(c => !c.error && c.imageUrlHQ && !c.hqLoaded);
-            if (!valid.length) { setLog(state.cards.filter(c=>!c.error).length + ' cartas listas.', 'ok'); return; }
+        function closeModalOnOverlay(e) {
+            if (e.target.id === 'art-modal') closeModal();
+        }
 
-            let done = 0;
-            for (const card of valid) {
-                // Cancelar si se lanzó una nueva carga
-                if (batchId !== upgradePreviewHQ._id) return;
+        async function loadPrints(cardName, lang) {
+            const grid = document.getElementById('prints-grid');
+            grid.innerHTML = '<div class="prints-loading"><div class="spinner-ring" style="margin:0 auto 12px;"></div>Indexando artes alternativas...</div>';
+            document.getElementById('btn-apply').disabled = true;
 
-                await new Promise((resolve) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        card.imageUrl = card.imageUrlHQ;
-                        if (card.imageUrl2HQ) card.imageUrl2 = card.imageUrl2HQ;
-                        card.hqLoaded = true;
-                        // Buscar el thumb por data-card-idx — evita desplazamientos
-                        // cuando hay cartas de error (sin <img>) antes de esta carta
-                        const cardIdx = state.cards.indexOf(card);
-                        const thumb = document.querySelector('.card-thumb[data-card-idx="' + cardIdx + '"] img');
-                        if (thumb) {
-                            thumb.classList.remove('hq-loading');
-                            thumb.src = card.imageUrl;
-                        }
-                        resolve();
-                    };
-                    img.onerror = () => resolve(); // falló la HQ, quedamos con small
-                    // Marcar como cargando (blur sutil) — usar data-card-idx
-                    const cardIdx2 = state.cards.indexOf(card);
-                    const thumbLoading = document.querySelector('.card-thumb[data-card-idx="' + cardIdx2 + '"] img');
-                    if (thumbLoading) thumbLoading.classList.add('hq-loading');
-                    img.src = card.imageUrlHQ + (card.imageUrlHQ.includes('?') ? '&' : '?') + '_hq=1';
-                    // Timeout: si tarda más de 8s, pasar a la siguiente
-                    setTimeout(resolve, 8000);
+            const cacheKey = `${cardName}_${lang}`;
+            let data = state.printsCache[cacheKey];
+
+            try {
+                if (!data) {
+                    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(`!"${cardName}"`)}&unique=prints&order=released`;
+                    const res = await fetchWithRetry(url);
+                    if (res && res.ok) { data = await res.json(); state.printsCache[cacheKey] = data; }
+                }
+
+                if (!data || !data.data || data.data.length === 0) {
+                    grid.innerHTML = '<div class="no-prints">No se han localizado variantes para esta edición.</div>';
+                    return;
+                }
+
+                modal.prints = data.data.filter(c => hasValidImage(c));
+                document.getElementById('modal-print-count').textContent = `${modal.prints.length} Ediciones localizadas`;
+
+                grid.innerHTML = '';
+                modal.prints.forEach(p => {
+                    const item = document.createElement('div');
+                    const isSelected = p.id === modal.selectedPrintId;
+                    item.className = `print-card ${isSelected ? 'selected' : ''}`;
+                    item.setAttribute('onclick', `selectPrint('${p.id}')`);
+
+                    const imgUrl = extractImageUrl(p);
+                    const r = p.rarity ? p.rarity.substring(0, 1).toUpperCase() : '?';
+                    const foilBadge = p.foil ? '<span class="print-badge" style="background:linear-gradient(45deg, #f59e0b, #ec4899)">Foil</span>' : '';
+
+                    item.innerHTML = `
+                            <img src="${imgUrl}" alt="${p.set_name}" />
+                            ${foilBadge}
+                            <div class="print-meta">
+                                <span class="set-name">${p.set_name}</span>
+                                <span class="set-detail">${p.set.toUpperCase()} · ${p.released_at.substring(0, 4)} · [${r}]</span>
+                            </div>
+                        `;
+                    grid.appendChild(item);
+                    if (isSelected) document.getElementById('btn-apply').disabled = false;
                 });
-
-                done++;
-                // Actualizar log cada 10 cartas para no spamear
-                if (done % 10 === 0 || done === valid.length) {
-                    if (batchId === upgradePreviewHQ._id) {
-                        setLog(done < valid.length
-                            ? `Mejorando calidad… ${done}/${valid.length}`
-                            : `✓ ${state.cards.filter(c=>!c.error).length} cartas en alta calidad.`, 'ok');
-                    }
-                }
+            } catch (e) {
+                grid.innerHTML = '<div class="no-prints">Error de conexión con el catálogo de Scryfall.</div>';
             }
         }
-        upgradePreviewHQ._id = 0;
 
-                document.getElementById('deck-input').addEventListener('input', debounce(function () {
+        function selectPrint(id) {
+            modal.selectedPrintId = id;
+            document.querySelectorAll('.print-card').forEach(el => el.classList.remove('selected'));
+            const cards = modal.prints;
+            const idx = cards.findIndex(c => c.id === id);
+            if (idx !== -1) {
+                document.getElementById('prints-grid').children[idx].classList.add('selected');
+                document.getElementById('btn-apply').disabled = false;
+            }
+        }
+
+        async function onModalLangChange() {
+            const nextLang = document.getElementById('modal-lang').value;
+            modal.currentLang = nextLang;
+            const card = state.cards[modal.cardIndex];
+
+            if (nextLang !== 'en') {
+                const localized = await fetchCardLang(card.reqName, nextLang);
+                if (localized) {
+                    await loadPrints(localized.name, nextLang);
+                    return;
+                }
+            }
+            await loadPrints(card.reqName, 'en');
+        }
+
+        function applySelection() {
+            if (modal.cardIndex === -1 || !modal.selectedPrintId) return;
+            const chosen = modal.prints.find(p => p.id === modal.selectedPrintId);
+            if (chosen) {
+                state.cards[modal.cardIndex].data = chosen;
+                state.cards[modal.cardIndex].lang = modal.currentLang;
+                renderPreview();
+            }
+            closeModal();
+        }
+
+        // Generador de PDFs Nativo con Cálculo de Márgenes Profesional
+        async function generatePDF() {
+            const valid = state.cards.filter(c => c.data && !c.error);
+            if (!valid.length) return;
+
+            showLoadingOverlay('Compilando PDF e inyectando artes de alta resolución...');
+            setProgress(5);
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const isA4 = document.getElementById('pdf-paper').value === 'a4';
+                const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: isA4 ? 'a4' : 'letter' });
+
+                const pw = isA4 ? 210 : 215.9;
+                const ph = isA4 ? 297 : 279.4;
+                const cw = 63, ch = 88;
+                const mx = (pw - (cw * 3)) / 2;
+                const my = (ph - (ch * 3)) / 2;
+
+                let currentCard = 0;
+                const totalProxies = valid.reduce((s, c) => s + c.qty, 0);
+                let loadedCount = 0;
+
+                const itemsList = [];
+                valid.forEach(c => { for (let i = 0; i < c.qty; i++) itemsList.push(c.data); });
+
+                for (let i = 0; i < itemsList.length; i++) {
+                    if (i > 0 && i % 9 === 0) doc.addPage();
+
+                    const pos = i % 9;
+                    const col = pos % 3;
+                    const row = Math.floor(pos / 3);
+                    const x = mx + (col * cw);
+                    const y = my + (row * ch);
+
+                    const cardData = itemsList[i];
+                    const url = extractImageUrl(cardData);
+
+                    let blob = imageBlobCache.get(url);
+                    if (!blob) {
+                        const r = await fetchWithRetry(url);
+                        blob = await r.blob();
+                        imageBlobCache.set(url, blob);
+                    }
+
+                    const base64 = await new Promise(res => {
+                        const fr = new FileReader();
+                        fr.onloadend = () => res(fr.result);
+                        fr.readAsDataURL(blob);
+                    });
+
+                    doc.addImage(base64, 'JPEG', x, y, cw, ch, undefined, 'FAST');
+
+                    // Dibujar marcas de corte si está habilitado
+                    if (document.getElementById('pdf-marks').value === 'yes') {
+                        doc.setDrawColor(180, 180, 180);
+                        doc.setLineWidth(0.1);
+                        if (col === 0) { doc.line(x - 4, y, x, y); doc.line(x - 4, y + ch, x, y + ch); }
+                        if (col === 2) { doc.line(x + cw, y, x + cw + 4, y); doc.line(x + cw, y + ch, x + cw + 4, y + ch); }
+                        if (row === 0) { doc.line(x, y - 4, x, y); doc.line(x + cw, y - 4, x + cw, y); }
+                        if (row === 2) { doc.line(x, y + ch, x, y + ch + 4); doc.line(x + cw, y + ch, x + cw + 4, y + ch + 4); }
+                    }
+
+                    loadedCount++;
+                    setProgress(Math.floor((loadedCount / totalProxies) * 100));
+                }
+
+                doc.save('MTG_Forge_Premium_Proxies.pdf');
+                setLog('Documento PDF generado y descargado con éxito.', 'ok');
+            } catch (err) {
+                setLog('Error durante la renderización del PDF: ' + err.message, 'error');
+            } finally {
+                hideLoadingOverlay();
+            }
+        }
+
+        // Sistema Nativo de Gestión de Temas UI
+        function toggleTheme() {
+            const curr = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = curr === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('mtg-proxy-theme', next);
+
+            document.getElementById('theme-icon').textContent = next === 'dark' ? '🌙' : '☀️';
+            document.getElementById('theme-label').textContent = next === 'dark' ? 'Oscuro' : 'Claro';
+        }
+
+        // Listener dinámico en tiempo real para actualización de HUD
+        document.getElementById('deck-input').addEventListener('input', function () {
             updateStats(parseArena(this.value));
-        }, 250));
+        });
     </script>
 </body>
 </html>
