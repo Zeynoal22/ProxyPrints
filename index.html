@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AetherForge | Proxy Studio</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+    <div class="modal-overlay" id="art-modal" onclick="closeModalOnOverlay(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title">Print Catalog</div>
+                    <div class="modal-card-name" id="modal-card-name">—</div>
+                </div>
+                <button class="header-btn" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-controls">
+                <label for="modal-lang">Localization:</label>
+                <select class="modal-lang-select" id="modal-lang" onchange="onModalLangChange()">
+                    <option value="en">🇬🇧 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="it">🇮🇹 Italiano</option>
+                    <option value="pt">🇧🇷 Português</option>
+                    <option value="ja">🇯🇵 日本語</option>
+                    <option value="ko">🇰🇷 한국어</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="zhs">🇨🇳 中文简体</option>
+                    <option value="zht">🇹🇼 中文繁體</option>
+                    <option value="ph">☣ Phyrexian</option>
+                </select>
+                <div class="modal-count" id="modal-print-count" style="margin-left:auto; font-size:0.8rem; color:var(--text-muted)"></div>
+            </div>
+            <div class="modal-body">
+                <div class="prints-grid" id="prints-grid">
+                    <div class="prints-loading" style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">
+                        <div class="spinner-ring" style="margin:0 auto 12px;"></div> Querying Scryfall...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; background:var(--bg-alt);">
+                <button class="header-btn" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-gold" id="btn-apply" onclick="applySelection()" style="width:auto; padding:8px 24px;" disabled>Confirm Art</button>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <div class="brand">
+            <div class="logo-icon"></div>
+            <div>
+                <h1>AetherForge <span> Proxy Studio</span></h1>
+                Created by <a href="https://x.com/CPlaneswalkers" target="_blank" style="color: var(--gold); font-weight: bold;">@CPlaneswalkers</a>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">
+                <span id="theme-icon">🌙</span> <span id="theme-label">Dark</span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div class="panel">
+            <div class="visual-steps">
+                <div class="step-item active" id="step-1"><span class="step-num">1</span> Paste Decklist</div>
+                <div class="step-item" id="step-2"><span class="step-num">2</span> Load Cards</div>
+                <div class="step-item" id="step-3"><span class="step-num">3</span> Customize Arts</div>
+                <div class="step-item" id="step-4"><span class="step-num">4</span> Build PDF</div>
+            </div>
+
+            <div class="control-group">
+                <label class="field-label">Decklist (Arena / MTGO Format)</label>
+                <textarea id="deck-input" placeholder="Empty deck. Paste your list here or try the format!&#10;Ex:&#10;1 Rograkh, Son of Rohgahh&#10;1 Thrasios, Triton Hero&#10;1 Polymorph..."></textarea>
+            </div>
+
+            <div class="control-group">
+                <label class="field-label" for="global-lang">Main Search Language</label>
+                <select id="global-lang">
+                    <option value="en">🇬🇧 English (Recommended)</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="it">🇮🇹 Italiano</option>
+                    <option value="pt">🇧🇷 Português</option>
+                    <option value="ja">🇯🇵 日本語</option>
+                    <option value="ko">🇰🇷 한국어</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="zhs">🇨🇳 中文简体</option>
+                    <option value="zht">🇹🇼 中文繁體</option>
+                    <option value="ph">☣ Phyrexian</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label class="field-label">PDF Print Settings</label>
+                <div class="pdf-options-grid">
+                    <div class="pdf-opt-label">
+                        Scale
+                        <select id="pdf-size"><option value="real">Real Size (100%)</option><option value="fit">Fit to page</option></select>
+                    </div>
+                    <div class="pdf-opt-label">
+                        Bleed
+                        <select id="pdf-bleed"><option value="none">No Bleed</option><option value="mm2">2mm Professional</option></select>
+                    </div>
+                    <div class="pdf-opt-label">
+                        DFC Cards
+                        <select id="pdf-dfc"><option value="both">Both Faces</option><option value="checklist">Front Only</option></select>
+                    </div>
+                    <div class="pdf-opt-label">
+                        Cut Marks
+                        <select id="pdf-marks"><option value="yes">Thin lines</option><option value="no">No marks</option></select>
+                    </div>
+                    <div class="pdf-opt-label">
+                        Resolution (DPI)
+                        <select id="pdf-quality"><option value="high">300 DPI High-Res</option><option value="std">150 DPI Fast</option></select>
+                    </div>
+                    <div class="pdf-opt-label">
+                        Paper
+                        <select id="pdf-paper"><option value="a4">A4 Standard</option><option value="letter">US Letter</option></select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-block"><div class="stat-val" id="stat-unique">0</div><div class="stat-lbl">Unique</div></div>
+                <div class="stat-block"><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
+                <div class="stat-block"><div class="stat-val" id="stat-pages">0</div><div class="stat-lbl">Pages</div></div>
+            </div>
+
+            <div class="control-group" style="gap:10px;">
+                <div class="progress-wrap"><div id="progress-bar"></div></div>
+                <div id="log">Enter a structured decklist to initialize the forge.</div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:auto;">
+                <button type="button" class="btn btn-primary" id="btn-load" onclick="loadDeck()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" /></svg> Sync Cards
+                </button>
+                <button type="button" class="btn btn-gold" id="btn-pdf" onclick="generatePDF()" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg> Generate Proxy File
+                </button>
+            </div>
+        </div>
+
+        <div class="preview-wrap">
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="loading-card">
+                    <div class="spinner-ring"></div>
+                    <div class="modal-title" style="margin-top:8px;">Processing Data</div>
+                    <div class="loading-text" id="loading-text" style="font-size:0.85rem; color:var(--text-muted); font-style:italic;">Indexing multimedia assets...</div>
+                    <div class="progress-wrap" style="width:160px; margin-top:4px;"><div class="loading-prog-bar" id="loading-prog-bar" style="height:100%; width:0%; background:var(--gold); transition:width 0.2s;"></div></div>
+                </div>
+            </div>
+
+            <div class="preview-surface">
+                <div class="preview-header">
+                    <span class="preview-title">Workspace and Composition</span>
+                    <span class="preview-title" id="preview-count" style="color:var(--gold); font-weight:700;"></span>
+                </div>
+                <div id="preview-grid">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🃏</div>
+                        <span style="font-size:0.9rem;">The studio is ready. Import a competitive deck to preview the assets.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        Multimedia assets provided by <a href="https://scryfall.com" target="_blank">Scryfall Engine</a>. Studio for personal use and playtesting. <br>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
