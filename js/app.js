@@ -1,4 +1,4 @@
-  // CORE LOGIC
+// CORE LOGIC
         const LANG_NAMES = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', it: 'IT', pt: 'PT', ja: 'JA', ko: 'KO', ru: 'RU', zhs: 'ZHS', zht: 'ZHT', ph: 'PH' };
         const imageBlobCache = new Map();
         const state = { cards: [], loading: false, printsCache: {}, abortController: null, langCache: {} };
@@ -595,6 +595,29 @@
             card.setCode = print.set ? print.set.toUpperCase() : '---';
             card.hqLoaded = false;
             card._blob = null; card._blob2 = null;
+
+            // Actualizar la lista de texto (textarea) para reflejar la versión seleccionada
+            const inputEl = document.getElementById('deck-input');
+            if (inputEl && print.set && print.collector_number) {
+                const parsed = parseArena(inputEl.value);
+                if (parsed.length > 0 && modal.cardIndex < parsed.length) {
+                    // Reemplazar la línea correspondiente manteniendo el orden
+                    const lines = inputEl.value.split('\n');
+                    let targetMatchIndex = 0;
+                    for (let i = 0; i < lines.length; i++) {
+                        let line = lines[i].trim();
+                        if (!line || /^(Deck|Sideboard|Commander|Companion|About)$/i.test(line)) continue;
+                        
+                        // Si coincide con el elemento mapeado en parseArena
+                        if (targetMatchIndex === modal.cardIndex) {
+                            lines[i] = `${card.qty} ${card.name} (${print.set.toUpperCase()}) ${print.collector_number}`;
+                            break;
+                        }
+                        targetMatchIndex++;
+                    }
+                    inputEl.value = lines.join('\n');
+                }
+            }
 
             closeModal();
             renderPreview();
