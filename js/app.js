@@ -202,6 +202,38 @@
             setProgress(0);
         }
 
+        function editQty(index) {
+            const thumb = document.querySelector(`.card-thumb[data-card-idx="${index}"]`);
+            if (!thumb) return;
+            const badge = thumb.querySelector('.qty-badge');
+            if (!badge) return;
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '1'; input.max = '99';
+            input.value = state.cards[index].qty;
+            input.style.cssText = 'position:absolute; top:10px; left:10px; width:44px; background:rgba(0,0,0,0.92); color:var(--gold); font-weight:700; font-size:0.82rem; border:1.5px solid var(--gold); border-radius:5px; padding:2px 4px; text-align:center; outline:none; z-index:10;';
+
+            badge.replaceWith(input);
+            input.focus(); input.select();
+
+            function commit() {
+                const v = parseInt(input.value, 10);
+                if (v > 0 && v !== state.cards[index].qty) {
+                    state.cards[index].qty = v;
+                    updateStats(state.cards.filter(c => !c.error));
+                }
+                renderPreview();
+            }
+
+            input.addEventListener('blur', commit);
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') input.blur();
+                if (e.key === 'Escape') renderPreview();
+                e.stopPropagation();
+            });
+        }
+
         function renderPreview() {
             const grid = document.getElementById('preview-grid');
             if (!state.cards.length) {
@@ -231,7 +263,7 @@
                                     <img src="${card.imageUrl}" alt="${card.name}" loading="lazy" />
                                     <div class="card-meta-overlay">
                                         <div class="card-info-top">
-                                            <span class="card-badge-ui" style="background:var(--gold-dim); color:#000; padding:2px 6px;">x${card.qty}</span>
+                                            <span class="qty-badge card-badge-ui" style="background:var(--gold-dim); color:#000; padding:2px 6px; cursor:pointer;" title="Click to edit quantity" onclick="event.stopPropagation(); editQty(${index})">×${card.qty}</span>
                                             <button class="card-remove-btn" onclick="event.stopPropagation(); removeCard(${index})">✕</button>
                                         </div>
                                         <div class="card-info-bottom">
@@ -404,7 +436,7 @@
                 }
 
                 setProgress(100);
-                renderPreview(state.cards);
+                renderPreview(); // state.cards es global, no necesita parámetro
                 updateStats(state.cards.filter(c => !c.error));
 
                 const totalOk = state.cards.filter(c => !c.error).length;
@@ -634,15 +666,18 @@
                         canvas.width = bitmap.width; canvas.height = bitmap.height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(bitmap, 0, 0);
-                        doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', x, y, CARD_W, CARD_H, undefined, 'FAST');
+                        // Leer calidad desde el selector de la UI
+                    const qualitySetting = document.getElementById('pdf-quality')?.value || 'high';
+                    const jpegQuality = qualitySetting === 'high' ? 0.94 : qualitySetting === 'std' ? 0.82 : 0.70;
+                    doc.addImage(canvas.toDataURL('image/jpeg', jpegQuality), 'JPEG', x, y, CARD_W, CARD_H, undefined, 'FAST');
                     } catch (e) { console.error("Error rendering PDF img", e); }
 
                     if (marks) {
                         doc.setDrawColor(180, 180, 180); doc.setLineWidth(0.1);
-                        if (col === 0) { doc.line(x - 4, y, x, y); doc.line(x - 4, y + CARD_H, x, y + CARD_H); }
-                        if (col === 2) { doc.line(x + CARD_W, y, x + CARD_W + 4, y); doc.line(x + CARD_W, y + CARD_H, x + CARD_W + 4, y + CARD_H); }
-                        if (row === 0) { doc.line(x, y - 4, x, y); doc.line(x + CARD_W, y - 4, x + CARD_W, y); }
-                        if (row === 2) { doc.line(x, y + CARD_H, x, y + CARD_H + 4); doc.line(x + CARD_W, y + CARD_H, x + CARD_W + 4, y + CARD_H + 4); }
+                        if (col === 0) { doc.line(x - 15, y, x, y); doc.line(x - 15, y + CARD_H, x, y + CARD_H); }
+                        if (col === 2) { doc.line(x + CARD_W, y, x + CARD_W + 15, y); doc.line(x + CARD_W, y + CARD_H, x + CARD_W + 15, y + CARD_H); }
+                        if (row === 0) { doc.line(x, y - 15, x, y); doc.line(x + CARD_W, y - 15, x + CARD_W, y); }
+                        if (row === 2) { doc.line(x, y + CARD_H, x, y + CARD_H + 15); doc.line(x + CARD_W, y + CARD_H, x + CARD_W + 15, y + CARD_H + 15); }
                     }
 
                     if (deck[i]._faceLabel) {
@@ -667,10 +702,25 @@
         function toggleTheme() {
             const curr = document.documentElement.getAttribute('data-theme') || 'dark';
             const next = curr === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            document.getElementById('theme-icon').textContent = next === 'dark' ? '🌙' : '☀️';
-            document.getElementById('theme-label').textContent = next === 'dark' ? 'Dark' : 'Light';
+            applyTheme(next);
+            try { localStorage.setItem('aetherforge-theme', next); } catch(e) {}
         }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const icon  = document.getElementById('theme-icon');
+            const label = document.getElementById('theme-label');
+            if (icon)  icon.textContent  = theme === 'dark' ? '🌙' : '☀️';
+            if (label) label.textContent = theme === 'dark' ? 'Dark' : 'Light';
+        }
+
+        // Restaurar tema guardado al cargar la página
+        (function initTheme() {
+            try {
+                const saved = localStorage.getItem('aetherforge-theme');
+                if (saved === 'light' || saved === 'dark') applyTheme(saved);
+            } catch(e) {}
+        })();
 
         document.getElementById('deck-input').addEventListener('input', function () {
             updateStats(parseArena(this.value));
