@@ -673,15 +673,21 @@
                 const PAGE_W = isA4 ? 210 : 215.9;
                 const PAGE_H = isA4 ? 297 : 279.4;
                 const CARD_W = 63, CARD_H = 88;
-                const MX = (PAGE_W - (CARD_W * 3)) / 2;
-                const MY = (PAGE_H - (CARD_H * 3)) / 2;
+                const COLS = 3, ROWS = 3;
+                // Gap entre cartas (mm) — leído del selector de la UI
+                const gap = parseFloat(document.getElementById('pdf-gap')?.value || 0);
+                // Centrar el grid en la página teniendo en cuenta el gap
+                const MX = (PAGE_W - (CARD_W * COLS + gap * (COLS - 1))) / 2;
+                const MY = (PAGE_H - (CARD_H * ROWS + gap * (ROWS - 1))) / 2;
                 const marks = document.getElementById('pdf-marks').value === 'yes';
 
                 for (let i = 0; i < deck.length; i++) {
                     const pos = i % 9;
                     if (pos === 0 && i > 0) doc.addPage();
-                    const col = pos % 3, row = Math.floor(pos / 3);
-                    const x = MX + col * CARD_W, y = MY + row * CARD_H;
+                    const col = pos % COLS, row = Math.floor(pos / COLS);
+                    // Cada carta se desplaza por su tamaño + el gap
+                    const x = MX + col * (CARD_W + gap);
+                    const y = MY + row * (CARD_H + gap);
 
                     try {
                         const bitmap = await createImageBitmap(deck[i]._useBlob);
