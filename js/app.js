@@ -659,9 +659,9 @@ async function generatePDF() {
         if (card.error || !card._blob) continue;
         const isDFC = !!card.pdfImageUrl2;
         for (let i = 0; i < card.qty; i++) {
-            deck.push({ ...card, _useBlob: card._blob, _faceLabel: isDFC && dfcMode === 'both' ? 'F1' : null });
+            deck.push({ ...card, _useBlob: card._blob, _faceLabel: isDFC && dfcMode === 'both' ? '' : null });
             if (isDFC && card._blob2 && dfcMode === 'both') {
-                deck.push({ ...card, _useBlob: card._blob2, _faceLabel: 'F2' });
+                deck.push({ ...card, _useBlob: card._blob2, _faceLabel: '' });
             }
         }
     }
