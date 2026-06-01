@@ -35,6 +35,10 @@
                     <option value="zht">🇹🇼 中文繁體</option>
                     <option value="ph">☣ Phyrexian</option>
                 </select>
+                <label for="modal-year-filter" id="modal-year-label" style="display:none; font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;" data-i18n="modal_year_label">Year:</label>
+                <select class="modal-lang-select" id="modal-year-filter" style="display:none; width:auto;" onchange="applyYearFilter()">
+                    <option value="all" data-i18n="opt_year_all">All Eras</option>
+                </select>
                 <div class="modal-count" id="modal-print-count" style="margin-left:auto; font-size:0.8rem; color:var(--text-muted)"></div>
             </div>
             <div class="modal-body">
@@ -137,8 +141,17 @@
                     <div class="pdf-opt-label">
                         <span data-i18n="pdf_marks">Cut Marks</span>
                         <select id="pdf-marks">
-                            <option value="yes" data-i18n="opt_marks_yes">Thin lines</option>
-                            <option value="no" data-i18n="opt_marks_no">No marks</option>
+                            <option value="no" data-i18n="opt_marks_no">None</option>
+                            <option value="thin" data-i18n="opt_marks_thin" selected>Thin</option>
+                            <option value="thick" data-i18n="opt_marks_thick">Thick</option>
+                        </select>
+                    </div>
+                    <div class="pdf-opt-label">
+                        <span data-i18n="pdf_border">Card Border</span>
+                        <select id="pdf-border">
+                            <option value="none" data-i18n="opt_border_none">None</option>
+                            <option value="thin" data-i18n="opt_border_thin">Thin (0.3mm)</option>
+                            <option value="thick" data-i18n="opt_border_thick">Thick (0.8mm)</option>
                         </select>
                     </div>
                     <div class="pdf-opt-label">
@@ -165,6 +178,30 @@
                             <option value="5" data-i18n="opt_gap_5">5mm</option>
                         </select>
                     </div>
+                    <div class="pdf-opt-label">
+                        <span data-i18n="pdf_duplex">Duplex Print</span>
+                        <select id="pdf-duplex">
+                            <option value="no" data-i18n="opt_duplex_no">Single-sided</option>
+                            <option value="yes" data-i18n="opt_duplex_yes">Double-sided (Mirror)</option>
+                        </select>
+                    </div>
+                    <div class="pdf-opt-label" style="grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <label class="toggle-row">
+                            <input type="checkbox" id="pdf-skip-basics" />
+                            <span class="toggle-knob"></span>
+                            <span data-i18n="pdf_skip_basics">Skip Basic Lands</span>
+                        </label>
+                        <label class="toggle-row">
+                            <input type="checkbox" id="pdf-watermark" />
+                            <span class="toggle-knob"></span>
+                            <span data-i18n="pdf_watermark">Proxy Watermark</span>
+                        </label>
+                        <label class="toggle-row">
+                            <input type="checkbox" id="pdf-decklist" />
+                            <span class="toggle-knob"></span>
+                            <span data-i18n="pdf_decklist">Print Decklist</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -183,6 +220,11 @@
                 <button type="button" class="btn btn-primary" id="btn-load" onclick="loadDeck()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" /></svg> <span data-i18n="btn_sync">Sync Cards</span>
                 </button>
+                <button type="button" class="btn btn-secondary" id="btn-custom-upload" onclick="document.getElementById('custom-img-input').click()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                    <span data-i18n="btn_custom_upload">Add Custom Card</span>
+                </button>
+                <input type="file" id="custom-img-input" accept="image/*" multiple style="display:none" onchange="handleCustomUpload(this)" />
                 <button type="button" class="btn btn-gold" id="btn-pdf" onclick="generatePDF()" disabled>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg> <span data-i18n="btn_pdf">Generate Proxy File</span>
                 </button>
