@@ -197,6 +197,7 @@ function removeCard(i) {
     state.cards.splice(i, 1);
     updateStats(state.cards.filter(c => !c.error));
     renderPreview();
+    if (typeof syncDeckInput === 'function') syncDeckInput();
 }
 
 function changeQty(index, delta) {
@@ -211,6 +212,7 @@ function changeQty(index, delta) {
         if (display) display.textContent = newQty;
     }
     updateStats(state.cards.filter(c => !c.error));
+    if (typeof syncDeckInput === 'function') syncDeckInput();
 }
 
 function editQty(index) {
