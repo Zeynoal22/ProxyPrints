@@ -144,11 +144,7 @@ async function loadDeck() {
 
             const baseCard = (pinnedKey && enMap.get(pinnedKey)) || enMap.get(key);
             const langCard = langMap.get(key);
-
-            // FIX: Si la carta tiene pin de set+collector, respetamos siempre esa edición
-            // para las imágenes. langCard solo se usa cuando NO hay pin explícito.
-            const hasPinnedEdition = !!(pinnedKey && enMap.get(pinnedKey));
-            const data = hasPinnedEdition ? baseCard : (langCard || baseCard);
+            const data = langCard || baseCard;
 
             if (!data) {
                 errors++;
@@ -163,19 +159,20 @@ async function loadDeck() {
             }
             state.cards.push({
                 qty,
-                name:         data.name || name,
+                name:            data.name || name,
                 imageUrl,
-                imageUrlHQ:   extractImageUrl(data, 'normal'),
-                pdfImageUrl:  extractImageUrl(data, 'normal'),
-                imageUrl2:    extractFace2Url(data, 'small'),
-                imageUrl2HQ:  extractFace2Url(data, 'normal'),
-                pdfImageUrl2: extractFace2Url(data, 'normal'),
-                face2Name:    extractFace2Name(data),
-                lang:         data.lang || targetLang,
-                printId:      data.id,
-                setCode:      data.set ? data.set.toUpperCase() : '---',
-                error:        false,
-                hqLoaded:     false
+                imageUrlHQ:      extractImageUrl(data, 'normal'),
+                pdfImageUrl:     extractImageUrl(data, 'normal'),
+                imageUrl2:       extractFace2Url(data, 'small'),
+                imageUrl2HQ:     extractFace2Url(data, 'normal'),
+                pdfImageUrl2:    extractFace2Url(data, 'normal'),
+                face2Name:       extractFace2Name(data),
+                lang:            data.lang || targetLang,
+                printId:         data.id,
+                setCode:         data.set ? data.set.toUpperCase() : '---',
+                collectorNumber: data.collector_number || null,
+                error:           false,
+                hqLoaded:        false
             });
         }
 
@@ -193,6 +190,7 @@ async function loadDeck() {
 
         if (totalOk > 0) document.getElementById('btn-pdf').disabled = false;
 
+        syncDeckInput();
         upgradePreviewHQ(state.cards);
 
     } catch (err) {
@@ -253,6 +251,25 @@ async function updateAllToLatestArts() {
     renderPreview();
     upgradePreviewHQ(state.cards);
     setLog(`✓ ${validCards.length} cards updated to latest arts.`, 'ok');
+}
+
+
+// ── Sync textarea from state.cards ───────────────────────────────────────────
+// Reconstruye el textarea de la izquierda a partir de state.cards.
+// Se llama tras cualquier operación que modifique el mazo (drop, remove, qty).
+function syncDeckInput() {
+    const inputEl = document.getElementById('deck-input');
+    if (!inputEl) return;
+    inputEl.value = state.cards
+        .filter(c => !c.error && !c._isCustom)
+        .map(c => {
+            if (c.setCode && c.setCode !== '---' && c.collectorNumber) {
+                return `${c.qty} ${c.name} (${c.setCode}) ${c.collectorNumber}`;
+            }
+            return `${c.qty} ${c.name}`;
+        })
+        .join('\n');
+    updateStats(parseArena(inputEl.value));
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
