@@ -1138,3 +1138,112 @@
     padding: 0 2px;
     font-family: 'Cinzel', serif;
 }
+
+/* ==========================================================================
+   SISTEMA DE MULTI-BACK SELECTION (SIN ESTILOS INLINE)
+   ========================================================================== */
+
+.bulk-back-panel {
+    display: none;
+    background: var(--bg-alt);
+    padding: 16px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    border: 1.5px solid var(--gold-dim);
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.bulk-back-panel.active {
+    display: flex;
+}
+
+.bulk-back-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.back-presets-gallery {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.back-preset-item {
+    position: relative;
+    width: 46px;
+    height: 64px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    cursor: pointer;
+    overflow: hidden;
+    transition: var(--transition);
+    background: var(--bg);
+    box-shadow: var(--shadow-sm);
+}
+
+.back-preset-item:hover {
+    border-color: var(--gold-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 0 8px var(--gold-glow);
+}
+
+.back-preset-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Selección interactiva de cartas */
+.card-thumb.selected-back {
+    border: 2.5px solid var(--gold) !important;
+    box-shadow: 0 0 16px var(--gold-glow), var(--shadow-lg) !important;
+    transform: translateY(-4px) scale(1.01);
+}
+
+/* Checkmark flotante en esquina superior derecha de la carta seleccionada */
+.card-back-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--ok);
+    color: #ffffff;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    z-index: 5;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    pointer-events: none;
+}
+
+.btn-right-align {
+    margin-left: auto;
+}
+/* Aviso informativo para el usuario en modo doble cara */
+.back-warning-notice {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--error-bg);
+    border: 1px dashed var(--error);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-warning-notice strong {
+    color: var(--error);
+}
