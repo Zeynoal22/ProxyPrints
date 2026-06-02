@@ -61,6 +61,16 @@ const TRANSLATIONS = {
         btn_custom_upload: 'Add Custom Card',
         modal_year_label: 'Era:',
         opt_year_all: 'All Eras',
+        back_assign_title: 'Assign back to selected',
+        btn_preview_backs: '👁️ Preview Backs',
+        btn_view_fronts: '👁️ View Card Fronts',
+        btn_clear_back_sel: 'Clear Selection',
+        back_warning_notice: 'Back Mode Active: Clicking cards selects them to change their back. If you want to modify their art, language, or original edition, temporarily disable "Double-sided (Duplex)" on the left panel to open the editor.',
+        log_select_back_error: 'Please select cards by clicking directly on them in the grid.',
+        log_back_assigned: n => `✓ Back assigned successfully to ${n} cards.`,
+        opt_quality_high: '300 DPI High-Res',
+        opt_quality_std: '150 DPI Fast',
+        opt_quality_ultra: '600 DPI Ultra-Res (Slow)',
     },
     es: {
         step1: 'Pegar Lista', step2: 'Cargar Cartas',
@@ -121,6 +131,13 @@ const TRANSLATIONS = {
         btn_custom_upload: 'Añadir Carta Personalizada',
         modal_year_label: 'Era:',
         opt_year_all: 'Todas las Eras',
+        back_assign_title: 'Asignar reverso a seleccionadas',
+        btn_preview_backs: '👁️ Previsualizar Reversos',
+        btn_view_fronts: '👁️ Ver Frente de las Cartas',
+        btn_clear_back_sel: 'Limpiar Selección',
+        back_warning_notice: 'Modo Reverso Activo: Al hacer clic sobre las cartas las seleccionas para cambiar su dorso. Si deseas modificar su arte, idioma o edición original, desactiva momentáneamente la opción "Doble Cara (Duplex)" en el panel izquierdo para abrir el editor.',
+        log_select_back_error: 'Por favor, selecciona cartas haciendo clic directamente sobre ellas en el grid.',
+        log_back_assigned: n => `✓ Reverso asignado correctamente a ${n} cartas.`
     },
     fr: {
         step1: 'Coller la Liste', step2: 'Charger les Cartes',
@@ -174,6 +191,13 @@ const TRANSLATIONS = {
         btn_custom_upload: 'Ajouter une Carte Personnalisée',
         modal_year_label: 'Ère:',
         opt_year_all: 'Toutes les Ères',
+        back_assign_title: 'Assigner le verso aux cartes sélectionnées',
+        btn_preview_backs: '👁️ Aperçu des Versos',
+        btn_view_fronts: '👁️ Voir le Recto des Cartes',
+        btn_clear_back_sel: 'Effacer la Sélection',
+        back_warning_notice: 'Mode Verso Actif : Cliquer sur les cartes les sélectionne pour changer leur verso. Si vous souhaitez modifier l\'illustration, la langue ou l\'édition originale, désactivez temporairement l\'option "Recto-Verso (Miroir)" dans le panneau de gauche pour ouvrir l\'éditeur.',
+        log_select_back_error: 'Veuillez sélectionner des cartes en cliquant directement dessus dans la grille.',
+        log_back_assigned: n => `✓ Verso attribué avec succès à ${n} cartes.`
     },
     de: {
         step1: 'Liste Einfügen', step2: 'Karten Laden',
@@ -227,6 +251,13 @@ const TRANSLATIONS = {
         btn_custom_upload: 'Eigene Karte hinzufügen',
         modal_year_label: 'Ära:',
         opt_year_all: 'Alle Ären',
+        back_assign_title: 'Rückseite den ausgewählten Karten zuweisen',
+        btn_preview_backs: '👁️ Rückseiten-Vorschau',
+        btn_view_fronts: '👁️ Kartenvorderseite anzeigen',
+        btn_clear_back_sel: 'Auswahl Aufheben',
+        back_warning_notice: 'Rückseitenmodus Aktiv: Durch Klicken auf die Karten werden sie ausgewählt, um ihre Rückseite zu ändern. Wenn Sie Grafik, Sprache oder Originaledition ändern möchten, deaktivieren Sie vorübergehend die Option "Doppelseitig (Spiegel)" im linken Bereich, um den Editor zu öffnen.',
+        log_select_back_error: 'Bitte wählen Sie Karten aus, indem Sie direkt im Raster darauf klicken.',
+        log_back_assigned: n => `✓ Rückseite erfolgreich für ${n} Karten zugewiesen.`
     },
     it: {
         step1: 'Incolla Lista', step2: 'Carica Carte',
@@ -280,6 +311,13 @@ const TRANSLATIONS = {
         btn_custom_upload: 'Aggiungi Carta Personalizzata',
         modal_year_label: 'Era:',
         opt_year_all: 'Tutte le Ere',
+        back_assign_title: 'Assegna il retro alle carte selezionate',
+        btn_preview_backs: '👁️ Anteprima dei Retri',
+        btn_view_fronts: '👁️ Vedi Fronte delle Carte',
+        btn_clear_back_sel: 'Cancella Selezione',
+        back_warning_notice: 'Modalità Retro Attiva: Cliccando sulle carte le selezioni per cambiare il loro retro. Se desideri modificare la loro arte, lingua o edizione originale, disattiva momentaneamente l\'opzione "Fronte-retro (Specchio)" nel pannello a sinistra per aprire l\'editor.',
+        log_select_back_error: 'Per favore, seleziona le carte cliccando direttamente su di esse nella griglia.',
+        log_back_assigned: n => `✓ Retro assegnato correttamente a ${n} carte.`
     },
 };
 
