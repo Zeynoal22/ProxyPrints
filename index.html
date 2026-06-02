@@ -7,6 +7,37 @@
     <link rel="stylesheet" href="css/styles.css" />
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* ── Drop zone feedback ──────────────────────────────────────────── */
+        #preview-grid.drop-active {
+            outline: 2.5px dashed var(--gold);
+            outline-offset: -4px;
+            background: color-mix(in srgb, var(--gold) 6%, transparent);
+            transition: outline 0.15s, background 0.15s;
+        }
+        #deck-input.drop-active {
+            outline: 2.5px dashed var(--gold);
+            outline-offset: -2px;
+            background: color-mix(in srgb, var(--gold) 5%, transparent);
+        }
+        .drop-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 7px 14px;
+            margin-bottom: 10px;
+            border: 1.5px dashed color-mix(in srgb, var(--gold) 45%, transparent);
+            border-radius: 8px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            color: color-mix(in srgb, var(--gold) 70%, var(--text-muted));
+            background: color-mix(in srgb, var(--gold) 4%, transparent);
+            pointer-events: none;
+            user-select: none;
+        }
+    </style>
 </head>
 <body>
 
@@ -276,6 +307,10 @@
     </div>
 </div>
 
+    <div class="drop-hint" id="drop-hint-bar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" opacity="0.7"><path d="M12 2v10M12 12l-3-3M12 12l3-3M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/></svg>
+        <span data-i18n="drop_hint">✦ Drag cards here from Scryfall or EDHREC to add them instantly</span>
+    </div>
     <div id="preview-grid">
         <div class="empty-state">
             <div class="empty-state-icon">🃏</div>
@@ -296,6 +331,7 @@
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/pdf.js"></script>
+    <script src="js/drop.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
