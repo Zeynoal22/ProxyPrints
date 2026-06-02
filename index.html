@@ -156,10 +156,11 @@
                     </div>
                     <div class="pdf-opt-label">
                         <span data-i18n="pdf_quality">Resolution (DPI)</span>
-                        <select id="pdf-quality">
-                            <option value="high" data-i18n="opt_quality_high">300 DPI High-Res</option>
-                            <option value="std" data-i18n="opt_quality_std">150 DPI Fast</option>
-                        </select>
+<select id="pdf-quality">
+    <option value="150" data-i18n="opt_quality_std">Render Rápido</option>
+    <option value="300" data-i18n="opt_quality_high" selected>Alta Resolución</option>
+    <option value="600" data-i18n="opt_quality_ultra">Calidad Máxima (600 DPI)</option>
+</select>
                     </div>
                     <div class="pdf-opt-label">
                         <span data-i18n="pdf_paper">Paper</span>
@@ -178,13 +179,13 @@
                             <option value="5" data-i18n="opt_gap_5">5mm</option>
                         </select>
                     </div>
-                    <div class="pdf-opt-label">
-                        <span data-i18n="pdf_duplex">Duplex Print</span>
-                        <select id="pdf-duplex">
-                            <option value="no" data-i18n="opt_duplex_no">Single-sided</option>
-                            <option value="yes" data-i18n="opt_duplex_yes">Double-sided (Mirror)</option>
-                        </select>
-                    </div>
+<div class="pdf-opt-label">
+    <span data-i18n="pdf_duplex">Duplex Print</span>
+    <select id="pdf-duplex" onchange="onDuplexChange()">
+        <option value="no" data-i18n="opt_duplex_no">Single-sided</option>
+        <option value="yes" data-i18n="opt_duplex_yes">Double-sided (Mirror)</option>
+    </select>
+</div>
                     <div class="pdf-opt-label" style="grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                         <label class="toggle-row">
                             <input type="checkbox" id="pdf-skip-basics" />
@@ -194,7 +195,7 @@
                         <label class="toggle-row">
                             <input type="checkbox" id="pdf-watermark" />
                             <span class="toggle-knob"></span>
-                            <span data-i18n="pdf_watermark">Watermark</span>
+                            <span data-i18n="pdf_watermark">Proxy Watermark</span>
                         </label>
                         <label class="toggle-row">
                             <input type="checkbox" id="pdf-decklist" />
@@ -244,16 +245,36 @@
 <div class="preview-surface">
     <div class="preview-header">
         <span class="preview-title" data-i18n="preview_title">Workspace and Composition</span>
-        
         <div style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
             <button class="btn-action-sec" id="btn-update-arts" onclick="updateAllToLatestArts()">
                 <span>🔄</span>
                 <span data-i18n="btn_latest_art">Update to Latest Arts</span>
             </button>
-            
             <span class="preview-title" id="preview-count" style="color:var(--gold); font-weight:700;"></span>
         </div>
     </div>
+
+    <!-- PANEL MASIVO TOTALMENTE CLASIFICADO CON COMPONENTES VISUALES -->
+<div id="bulk-back-panel" class="bulk-back-panel">
+    <div class="bulk-back-group">
+        <span class="field-label">
+            <span data-i18n="back_assign_title">Asignar reverso a seleccionadas</span> 
+            (<span id="bulk-select-count" style="color:var(--gold)">0</span>)
+        </span>
+        <div id="back-presets-list" class="back-presets-gallery"></div>
+    </div>
+    
+    <button class="btn-action-sec" onclick="document.getElementById('custom-back-input').click()">+ Custom Image</button>
+    <input type="file" id="custom-back-input" accept="image/*" style="display:none" onchange="handleCustomBackUpload(this)" />
+    
+    <button class="btn-action-sec" id="btn-toggle-back-preview" onclick="toggleBackPreviewMode()" data-i18n="btn_preview_backs">👁️ Previsualizar Reversos</button>
+    <button class="btn-action-sec btn-right-align" onclick="clearBackSelection()" data-i18n="btn_clear_back_sel">Limpiar Selección</button>
+
+    <div class="back-warning-notice">
+        <span>⚠️</span>
+        <span data-i18n="back_warning_notice">Modo Reverso Activo: Al hacer clic sobre las cartas las seleccionas para cambiar su dorso. Si deseas modificar su arte, idioma o edición original, desactiva momentáneamente la opción "Doble Cara (Duplex)" en el panel izquierdo para abrir el editor.</span>
+    </div>
+</div>
 
     <div id="preview-grid">
         <div class="empty-state">
@@ -270,6 +291,11 @@
         <span data-i18n="footer_text">Multimedia assets provided by</span> <a href="https://scryfall.com" target="_blank">Scryfall Engine</a>. Studio for personal use and playtesting. <br>
     </footer>
     <script src="js/i18n.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/pdf.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
