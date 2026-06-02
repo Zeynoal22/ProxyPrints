@@ -1,278 +1,390 @@
-// ── app.js ────────────────────────────────────────────────────────────────────
-// Main orchestration: loadDeck, updateAllToLatestArts, and init listeners.
-// Depends on: utils.js, state.js, api.js, ui.js, pdf.js
+// ══════════════════════════════════════════════════════════════
+// i18n — UI Language System
+// ══════════════════════════════════════════════════════════════
+const TRANSLATIONS = {
+    en: {
+        step1: 'Paste Decklist', step2: 'Load Cards',
+        step3: 'Customize Arts', step4: 'Build PDF',
+        label_decklist: 'Decklist (Arena / MTGO Format)',
+        label_lang: 'Main Search Language',
+        label_pdf: 'PDF Print Settings',
+        pdf_scale: 'Scale', pdf_bleed: 'Bleed', pdf_dfc: 'DFC Cards',
+        pdf_marks: 'Cut Marks', pdf_quality: 'Resolution (DPI)',
+        pdf_paper: 'Paper', pdf_gap: 'Card Gap',
+        stat_unique: 'Unique', stat_total: 'Total', stat_pages: 'Pages',
+        btn_sync: 'Sync Cards', btn_pdf: 'Generate Proxy File',
+        btn_cancel: 'Cancel', btn_confirm: 'Confirm Art',
+        modal_title: 'Print Catalog', modal_lang_label: 'Localization:',
+        preview_title: 'Workspace and Composition',
+        loading_title: 'Processing Data',
+        log_init: 'Enter a structured decklist to initialize the forge.',
+        log_error_none: 'No cards loaded. Check card names.',
+        log_done: n => `✓ ${n} cards loaded.`,
+        log_done_errors: (ok, err) => `Done with ${err} error(s). ${ok} cards loaded.`,
+        log_pdf: 'Generating PDF…',
+        log_pdf_done: (n, p) => `✓ PDF: ${n} cards in ${p} page(s).`,
+        loading_phase1: n => `Fetching ${n} cards…`,
+        loading_phase2: l => `Searching ${l} versions…`,
+        empty_state: 'The studio is ready. Import a competitive deck.',
+        footer_text: 'Multimedia assets provided by',
+        theme_dark: 'Dark', theme_light: 'Light',
+        opt_scale_real: 'Real Size (100%)',
+        opt_scale_fit: 'Fit to page',
+        opt_bleed_none: 'No Bleed',
+        opt_bleed_mm2: '2mm Professional',
+        opt_dfc_both: 'Both Faces',
+        opt_dfc_checklist: 'Front Only',
+        opt_marks_yes: 'Thin lines',
+        opt_marks_no: 'No marks',
+        opt_quality_high: '300 DPI High-Res',
+        opt_quality_std: '150 DPI Fast',
+        opt_paper_a4: 'A4 Standard',
+        opt_paper_letter: 'US Letter',
+        opt_gap_0: 'None (0mm)',
+        opt_gap_1: '1mm',
+        opt_gap_2: '2mm',
+        opt_gap_3: '3mm',
+        opt_gap_5: '5mm',
+        btn_latest_art: 'Update to Latest Arts',
+        confirm_latest_art: 'Do you want to update all cards with the most recent art in your language? This might mean that some cards without a matching version will get artwork you do not want, please review it afterwards.',
+        pdf_marks: 'Cut Marks',
+        opt_marks_no: 'None',
+        opt_marks_thin: 'Thin',
+        opt_marks_thick: 'Thick',
+        pdf_border: 'Card Border',
+        opt_border_none: 'None',
+        opt_border_thin: 'Thin (0.3mm)',
+        opt_border_thick: 'Thick (0.8mm)',
+        opt_duplex_no: 'Single-sided',
+        opt_duplex_yes: 'Double-sided (Mirror)',
+        pdf_skip_basics: 'Skip Basic Lands',
+        btn_custom_upload: 'Add Custom Card',
+        modal_year_label: 'Era:',
+        opt_year_all: 'All Eras',
+        back_assign_title: 'Assign back to selected',
+        btn_preview_backs: '👁️ Preview Backs',
+        btn_view_fronts: '👁️ View Card Fronts',
+        btn_clear_back_sel: 'Clear Selection',
+        back_warning_notice: 'Back Mode Active: Clicking cards selects them to change their back. If you want to modify their art, language, or original edition, temporarily disable "Double-sided (Duplex)" on the left panel to open the editor.',
+        log_select_back_error: 'Please select cards by clicking directly on them in the grid.',
+        log_back_assigned: n => `✓ Back assigned successfully to ${n} cards.`,
+        drop_hint: '✦ Drag cards here from Scryfall or EDHREC to add them instantly',
+        opt_quality_high: '300 DPI High-Res',
+        opt_quality_std: '150 DPI Fast',
+        opt_quality_ultra: '600 DPI Ultra-Res (Slow)',
+    },
+    es: {
+        step1: 'Pegar Lista', step2: 'Cargar Cartas',
+        step3: 'Elegir Arte', step4: 'Crear PDF',
+        label_decklist: 'Lista de Mazo (Formato Arena / MTGO)',
+        label_lang: 'Idioma Principal de Búsqueda',
+        label_pdf: 'Ajustes de Impresión PDF',
+        pdf_scale: 'Escala', pdf_bleed: 'Sangrado', pdf_dfc: 'Cartas DFC',
+        pdf_marks: 'Marcas de Corte', pdf_quality: 'Resolución (DPI)',
+        pdf_paper: 'Papel', pdf_gap: 'Espacio entre Cartas',
+        stat_unique: 'Únicas', stat_total: 'Total', stat_pages: 'Páginas',
+        btn_sync: 'Cargar Cartas', btn_pdf: 'Generar PDF',
+        btn_cancel: 'Cancelar', btn_confirm: 'Confirmar Arte',
+        modal_title: 'Catálogo de Impresiones', modal_lang_label: 'Idioma:',
+        preview_title: 'Área de Trabajo',
+        loading_title: 'Procesando',
+        log_init: 'Pega una lista de mazo para empezar.',
+        log_error_none: 'No se cargó ninguna carta. Revisa los nombres.',
+        log_done: n => `✓ ${n} cartas cargadas.`,
+        log_done_errors: (ok, err) => `Listo con ${err} error(es). ${ok} cartas cargadas.`,
+        log_pdf: 'Generando PDF…',
+        log_pdf_done: (n, p) => `✓ PDF: ${n} cartas en ${p} página(s).`,
+        loading_phase1: n => `Buscando ${n} cartas en batch…`,
+        loading_phase2: l => `Buscando versiones en ${l}…`,
+        empty_state: 'El estudio está listo. Importa un mazo para previsualizar.',
+        footer_text: 'Imágenes proporcionadas por',
+        theme_dark: 'Oscuro', theme_light: 'Claro',
+        opt_scale_real: 'Tamaño Real (100%)',
+        opt_scale_fit: 'Ajustar a la página',
+        opt_bleed_none: 'Sin sangrado',
+        opt_bleed_mm2: 'Sangrado Profesional',
+        opt_dfc_both: 'Ambas caras',
+        opt_dfc_checklist: 'Solo frente',
+        opt_marks_yes: 'Líneas finas',
+        opt_marks_no: 'Sin marcas',
+        opt_quality_high: 'Alta Resolución',
+        opt_quality_std: 'Render Rápido',
+        opt_paper_a4: 'A4 Estándar',
+        opt_paper_letter: 'Carta US',
+        opt_gap_0: 'Ninguno',
+        opt_gap_1: 'Pequeño',
+        opt_gap_2: 'Mediano',
+        opt_gap_3: 'Grande',
+        opt_gap_5: 'Muy Grande',
+        btn_latest_art: 'Actualizar a Artes Recientes',
+        confirm_latest_art: '¿Quieres actualizar todas las cartas con el arte más actual en tu idioma? Esto puede suponer que algunas cartas que no tengan versión salgan con artes que no quieres, revísalo luego por favor.',
+        pdf_marks: 'Marcas de Corte',
+        opt_marks_no: 'Sin marcas',
+        opt_marks_thin: 'Finas',
+        opt_marks_thick: 'Gruesas',
+        pdf_border: 'Borde de Carta',
+        opt_border_none: 'Sin borde',
+        opt_border_thin: 'Fino (0.3mm)',
+        opt_border_thick: 'Grueso (0.8mm)',
+        opt_duplex_no: 'Una cara',
+        opt_duplex_yes: 'Doble cara (Espejo)',
+        pdf_skip_basics: 'Omitir Tierras Básicas',
+        btn_custom_upload: 'Añadir Carta Personalizada',
+        modal_year_label: 'Era:',
+        opt_year_all: 'Todas las Eras',
+        back_assign_title: 'Asignar reverso a seleccionadas',
+        btn_preview_backs: '👁️ Previsualizar Reversos',
+        btn_view_fronts: '👁️ Ver Frente de las Cartas',
+        btn_clear_back_sel: 'Limpiar Selección',
+        back_warning_notice: 'Modo Reverso Activo: Al hacer clic sobre las cartas las seleccionas para cambiar su dorso. Si deseas modificar su arte, idioma o edición original, desactiva momentáneamente la opción "Doble Cara (Duplex)" en el panel izquierdo para abrir el editor.',
+        log_select_back_error: 'Por favor, selecciona cartas haciendo clic directamente sobre ellas en el grid.',
+        log_back_assigned: n => `✓ Reverso asignado correctamente a ${n} cartas.`,
+        drop_hint: '✦ Arrastra cartas desde Scryfall o EDHREC para añadirlas al instante',
+    },
+    fr: {
+        step1: 'Coller la Liste', step2: 'Charger les Cartes',
+        step3: 'Personnaliser', step4: 'Créer PDF',
+        label_decklist: 'Liste de Deck (Format Arena / MTGO)',
+        label_lang: 'Langue de Recherche Principale',
+        label_pdf: "Paramètres d'Impression PDF",
+        pdf_scale: 'Échelle', pdf_bleed: 'Fond Perdu', pdf_dfc: 'Cartes DFC',
+        pdf_marks: 'Repères de Coupe', pdf_quality: 'Résolution (DPI)',
+        pdf_paper: 'Papier', pdf_gap: 'Espacement',
+        stat_unique: 'Uniques', stat_total: 'Total', stat_pages: 'Pages',
+        btn_sync: 'Charger les Cartes', btn_pdf: 'Générer le PDF',
+        btn_cancel: 'Annuler', btn_confirm: "Confirmer l'Art",
+        modal_title: "Catalogue d'Impressions", modal_lang_label: 'Langue:',
+        preview_title: 'Espace de Travail',
+        loading_title: 'Traitement en Cours',
+        log_init: 'Collez une liste de deck pour commencer.',
+        log_error_none: 'Aucune carte chargée. Vérifiez les noms.',
+        log_done: n => `✓ ${n} cartes chargées.`,
+        log_done_errors: (ok, err) => `Terminé avec ${err} erreur(s). ${ok} cartes chargées.`,
+        log_pdf: 'Génération du PDF…',
+        log_pdf_done: (n, p) => `✓ PDF: ${n} cartes en ${p} page(s).`,
+        loading_phase1: n => `Recherche de ${n} cartes en lot…`,
+        loading_phase2: l => `Recherche de versions en ${l}…`,
+        empty_state: 'Le studio est prêt. Importez un deck pour prévisualiser.',
+        footer_text: 'Images fournies par',
+        theme_dark: 'Sombre', theme_light: 'Clair',
+        opt_scale_real: 'Taille Réelle (100%)',
+        opt_scale_fit: 'Ajuster à la page',
+        opt_bleed_none: 'Sans fond perdu',
+        opt_bleed_mm2: 'Fond perdu professionnel',
+        opt_dfc_both: 'Les deux faces',
+        opt_dfc_checklist: 'Face avant seulement',
+        opt_marks_yes: 'Lignes fines',
+        opt_marks_no: 'Sans repères',
+        opt_quality_high: 'Haute Résolution',
+        opt_quality_std: 'Rendu Rapide',
+        opt_paper_a4: 'A4 Standard',
+        opt_paper_letter: 'Lettre US',
+        opt_gap_0: 'Aucun',
+        opt_gap_1: 'Petit',
+        opt_gap_2: 'Moyen',
+        opt_gap_3: 'Grand',
+        opt_gap_5: 'Très Grand',
+        btn_latest_art: 'Mettre à jour les illustrations',
+        confirm_latest_art: 'Voulez-vous mettre à jour toutes les cartes avec l\'illustration la plus récente dans votre langue ? Cela peut signifier que certaines cartes sans version correspondante s\'afficheront avec des illustrations que vous ne souhaitez pas, veuillez vérifier ensuite.',
+        pdf_duplex: 'Impression Recto-Verso',
+        opt_duplex_no: 'Recto seulement',
+        opt_duplex_yes: 'Recto-verso (Miroir)',
+        pdf_skip_basics: 'Ignorer Terrains de Base',
+        btn_custom_upload: 'Ajouter une Carte Personnalisée',
+        modal_year_label: 'Ère:',
+        opt_year_all: 'Toutes les Ères',
+        back_assign_title: 'Assigner le verso aux cartes sélectionnées',
+        btn_preview_backs: '👁️ Aperçu des Versos',
+        btn_view_fronts: '👁️ Voir le Recto des Cartes',
+        btn_clear_back_sel: 'Effacer la Sélection',
+        back_warning_notice: 'Mode Verso Actif : Cliquer sur les cartes les sélectionne pour changer leur verso. Si vous souhaitez modifier l\'illustration, la langue ou l\'édition originale, désactivez temporairement l\'option "Recto-Verso (Miroir)" dans le panneau de gauche pour ouvrir l\'éditeur.',
+        log_select_back_error: 'Veuillez sélectionner des cartes en cliquant directement dessus dans la grille.',
+        log_back_assigned: n => `✓ Verso attribué avec succès à ${n} cartes.`,
+        drop_hint: '✦ Glissez des cartes depuis Scryfall ou EDHREC pour les ajouter instantanément',
+    },
+    de: {
+        step1: 'Liste Einfügen', step2: 'Karten Laden',
+        step3: 'Kunst Wählen', step4: 'PDF Erstellen',
+        label_decklist: 'Deckliste (Arena / MTGO Format)',
+        label_lang: 'Hauptsuchsprache',
+        label_pdf: 'PDF-Druckeinstellungen',
+        pdf_scale: 'Skalierung', pdf_bleed: 'Anschnitt', pdf_dfc: 'DFC-Karten',
+        pdf_marks: 'Schnittmarken', pdf_quality: 'Auflösung (DPI)',
+        pdf_paper: 'Papier', pdf_gap: 'Kartenabstand',
+        stat_unique: 'Einzigartig', stat_total: 'Gesamt', stat_pages: 'Seiten',
+        btn_sync: 'Karten Laden', btn_pdf: 'PDF Generieren',
+        btn_cancel: 'Abbrechen', btn_confirm: 'Druck Bestätigen',
+        modal_title: 'Druckkatalog', modal_lang_label: 'Sprache:',
+        preview_title: 'Arbeitsbereich',
+        loading_title: 'Verarbeitung',
+        log_init: 'Füge eine Deckliste ein, um zu beginnen.',
+        log_error_none: 'Keine Karten geladen. Überprüfe die Namen.',
+        log_done: n => `✓ ${n} Karten geladen.`,
+        log_done_errors: (ok, err) => `Fertig mit ${err} Fehler(n). ${ok} Karten geladen.`,
+        log_pdf: 'PDF wird erstellt…',
+        log_pdf_done: (n, p) => `✓ PDF: ${n} Karten auf ${p} Seite(n).`,
+        loading_phase1: n => `Suche nach ${n} Karten im Batch…`,
+        loading_phase2: l => `Suche nach ${l}-Versionen…`,
+        empty_state: 'Das Studio ist bereit. Importiere ein Deck zur Vorschau.',
+        footer_text: 'Bilder bereitgestellt von',
+        theme_dark: 'Dunkel', theme_light: 'Hell',
+        opt_scale_real: 'Originalgröße (100%)',
+        opt_scale_fit: 'An Seite anpassen',
+        opt_bleed_none: 'Ohne Anschnitt',
+        opt_bleed_mm2: 'Professioneller Anschnitt',
+        opt_dfc_both: 'Beide Seiten',
+        opt_dfc_checklist: 'Nur Vorderseite',
+        opt_marks_yes: 'Dünne Linien',
+        opt_marks_no: 'Ohne Markierungen',
+        opt_quality_high: 'Hohe Auflösung',
+        opt_quality_std: 'Schneller Render',
+        opt_paper_a4: 'A4 Standard',
+        opt_paper_letter: 'US Letter',
+        opt_gap_0: 'Ohne',
+        opt_gap_1: 'Klein',
+        opt_gap_2: 'Mittel',
+        opt_gap_3: 'Groß',
+        opt_gap_5: 'Sehr Groß',
+        btn_latest_art: 'Auf neueste Grafiken aktualisieren',
+        confirm_latest_art: 'Möchten Sie alle Karten mit der neuesten Grafik in Ihrer Sprache aktualisieren? Dies kann dazu führen, dass einige Karten ohne passende Version eine unerwünschte Grafik erhalten, bitte überprüfen Sie dies später.',
+        pdf_duplex: 'Duplexdruck',
+        opt_duplex_no: 'Einseitig',
+        opt_duplex_yes: 'Doppelseitig (Spiegel)',
+        pdf_skip_basics: 'Basisländer überspringen',
+        btn_custom_upload: 'Eigene Karte hinzufügen',
+        modal_year_label: 'Ära:',
+        opt_year_all: 'Alle Ären',
+        back_assign_title: 'Rückseite den ausgewählten Karten zuweisen',
+        btn_preview_backs: '👁️ Rückseiten-Vorschau',
+        btn_view_fronts: '👁️ Kartenvorderseite anzeigen',
+        btn_clear_back_sel: 'Auswahl Aufheben',
+        back_warning_notice: 'Rückseitenmodus Aktiv: Durch Klicken auf die Karten werden sie ausgewählt, um ihre Rückseite zu ändern. Wenn Sie Grafik, Sprache oder Originaledition ändern möchten, deaktivieren Sie vorübergehend die Option "Doppelseitig (Spiegel)" im linken Bereich, um den Editor zu öffnen.',
+        log_select_back_error: 'Bitte wählen Sie Karten aus, indem Sie direkt im Raster darauf klicken.',
+        log_back_assigned: n => `✓ Rückseite erfolgreich für ${n} Karten zugewiesen.`,
+        drop_hint: '✦ Karten von Scryfall oder EDHREC hierher ziehen, um sie sofort hinzuzufügen',
+    },
+    it: {
+        step1: 'Incolla Lista', step2: 'Carica Carte',
+        step3: 'Scegli Arte', step4: 'Crea PDF',
+        label_decklist: 'Lista Mazzo (Formato Arena / MTGO)',
+        label_lang: 'Lingua di Ricerca Principale',
+        label_pdf: 'Impostazioni Stampa PDF',
+        pdf_scale: 'Scala', pdf_bleed: 'Abbondanza', pdf_dfc: 'Carte DFC',
+        pdf_marks: 'Segni di Taglio', pdf_quality: 'Risoluzione (DPI)',
+        pdf_paper: 'Carta', pdf_gap: 'Spazio tra Carte',
+        stat_unique: 'Uniche', stat_total: 'Totale', stat_pages: 'Pagine',
+        btn_sync: 'Carica Carte', btn_pdf: 'Genera PDF',
+        btn_cancel: 'Annulla', btn_confirm: 'Conferma Arte',
+        modal_title: 'Catalogo Stampe', modal_lang_label: 'Lingua:',
+        preview_title: 'Area di Lavoro',
+        loading_title: 'Elaborazione',
+        log_init: 'Incolla una lista mazzo per iniziare.',
+        log_error_none: 'Nessuna carta caricata. Controlla i nomi.',
+        log_done: n => `✓ ${n} carte caricate.`,
+        log_done_errors: (ok, err) => `Completato con ${err} errore/i. ${ok} carte caricate.`,
+        log_pdf: 'Generazione PDF…',
+        log_pdf_done: (n, p) => `✓ PDF: ${n} carte in ${p} pagina/e.`,
+        loading_phase1: n => `Ricerca di ${n} carte in batch…`,
+        loading_phase2: l => `Ricerca versioni in ${l}…`,
+        empty_state: 'Lo studio è pronto. Importa un mazzo per visualizzare le carte.',
+        footer_text: 'Immagini fornite da',
+        theme_dark: 'Scuro', theme_light: 'Chiaro',
+        opt_scale_real: 'Dimensione Reale (100%)',
+        opt_scale_fit: 'Adatta alla pagina',
+        opt_bleed_none: 'Senza margine d\'esubero',
+        opt_bleed_mm2: 'Margine professionale',
+        opt_dfc_both: 'Entrambe le facce',
+        opt_dfc_checklist: 'Solo fronte',
+        opt_marks_yes: 'Linee sottili',
+        opt_marks_no: 'Senza segni',
+        opt_quality_high: 'Alta Risoluzione',
+        opt_quality_std: 'Rendering Rapido',
+        opt_paper_a4: 'A4 Standard',
+        opt_paper_letter: 'Lettera US',
+        opt_gap_0: 'Nessuno',
+        opt_gap_1: 'Piccolo',
+        opt_gap_2: 'Medio',
+        opt_gap_3: 'Grande',
+        opt_gap_5: 'Molto Grande',
+        btn_latest_art: 'Aggiorna alle ultime illustrazioni',
+        confirm_latest_art: 'Vuoi aggiornare tutte le carte con l\'illustrazione más recente nella tua lingua? Questo potrebbe far sì que alcune carte senza una versione corrispondente mostrino illustraciones sgradite, per favore controllale dopo.',
+        pdf_duplex: 'Stampa Fronte-Retro',
+        opt_duplex_no: 'Solo fronte',
+        opt_duplex_yes: 'Fronte-retro (Specchio)',
+        pdf_skip_basics: 'Ignora Terre Base',
+        btn_custom_upload: 'Aggiungi Carta Personalizzata',
+        modal_year_label: 'Era:',
+        opt_year_all: 'Tutte le Ere',
+        back_assign_title: 'Assegna il retro alle carte selezionate',
+        btn_preview_backs: '👁️ Anteprima dei Retri',
+        btn_view_fronts: '👁️ Vedi Fronte delle Carte',
+        btn_clear_back_sel: 'Cancella Selezione',
+        back_warning_notice: 'Modalità Retro Attiva: Cliccando sulle carte le selezioni per cambiare il loro retro. Se desideri modificare la loro arte, lingua o edizione originale, disattiva momentaneamente l\'opzione "Fronte-retro (Specchio)" nel pannello a sinistra per aprire l\'editor.',
+        log_select_back_error: 'Per favore, seleziona le carte cliccando direttamente su di esse nella griglia.',
+        log_back_assigned: n => `✓ Retro assegnato correttamente a ${n} carte.`,
+        drop_hint: '✦ Trascina carte da Scryfall o EDHREC per aggiungerle immediatamente',
+    },
+};
 
-async function loadDeck() {
-    if (state.loading) return;
+const UI_LANG_FLAGS  = { en: '🇬🇧', es: '🇪🇸', fr: '🇫🇷', de: '🇩🇪', it: '🇮🇹' };
+const UI_LANG_LABELS = { en: 'EN',   es: 'ES',  fr: 'FR',  de: 'DE',  it: 'IT'  };
+let currentUILang = 'en';
 
-    try {
-        const inputEl = document.getElementById('deck-input');
-        let text = inputEl.value.trim();
-
-        if (!text) {
-            text = "1 Rograkh, Son of Rohgahh\n1 Thrasios, Triton Hero\n1 Polymorph\n1 Sol Ring";
-            inputEl.value = text;
-            setLog('Empty list detected. Syncing automatic test block.', 'ok');
-            inputEl.style.transition = '0.3s';
-            inputEl.style.borderColor = 'var(--gold)';
-            inputEl.style.boxShadow = '0 0 8px var(--gold-glow)';
-            setTimeout(() => {
-                inputEl.style.borderColor = 'var(--border)';
-                inputEl.style.boxShadow = 'none';
-            }, 1200);
-        }
-
-        const parsed = parseArena(text);
-        if (!parsed.length) {
-            setLog('Invalid format. Make sure to include quantity and name (e.g., 4 Sol Ring).', 'error');
-            inputEl.style.transition = '0.3s';
-            inputEl.style.borderColor = 'var(--error)';
-            setTimeout(() => { inputEl.style.borderColor = 'var(--border)'; }, 1500);
-            return;
-        }
-
-        if (state.abortController) state.abortController.abort();
-        const controller = new AbortController();
-        state.abortController = controller;
-
-        const targetLang = getGlobalLang();
-        state.loading = true;
-        state.cards = [];
-        document.getElementById('btn-load').disabled = true;
-        document.getElementById('btn-pdf').disabled = true;
-
-        const uniqueNames = [...new Map(parsed.map(p => [normalizeCardName(p.name), p])).values()];
-
-        showLoadingOverlay(t('loading_phase1', uniqueNames.length));
-        setLog('Searching Scryfall database...', '');
-
-        const grid = document.getElementById('preview-grid');
-        grid.innerHTML = Array(Math.min(uniqueNames.length, 8)).fill('<div class="skeleton-card"></div>').join('');
-
-        // ── Phase 1: fetch EN base data (batch + fallback) ────────────────────
-        const enMap = new Map();
-        let batchOk = false;
-        try {
-            for (let i = 0; i < uniqueNames.length; i += 75) {
-                if (controller.signal.aborted) break;
-                const chunk = uniqueNames.slice(i, i + 75);
-                const { map } = await fetchCollectionBatch(chunk);
-                for (const [k, v] of map) enMap.set(k, v);
-                setProgress(Math.round(((i + 75) / uniqueNames.length) * 40));
-            }
-            batchOk = true;
-        } catch (e) { console.warn('Batch request failed, attempting manual searches', e); }
-
-        if (!batchOk || enMap.size < uniqueNames.length) {
-            const missing = uniqueNames.filter(e =>
-                !enMap.has(normalizeCardName(e.name)) &&
-                !(e.setCode && e.collectorNumber && enMap.has(`${e.setCode}:${e.collectorNumber}`))
-            );
-            if (missing.length > 0) {
-                let done = 0;
-                const fallbackTasks = missing.map(entry => async () => {
-                    if (controller.signal.aborted) return;
-                    try {
-                        const res = await fetchWithRetry(
-                            'https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(entry.name),
-                            { signal: controller.signal }
-                        );
-                        if (res && res.ok) {
-                            const card = await res.json();
-                            enMap.set(normalizeCardName(card.name), card);
-                            if (card.name.includes(' // ')) enMap.set(normalizeCardName(card.name.split(' // ')[0].trim()), card);
-                            enMap.set(normalizeCardName(entry.name), card);
-                        }
-                    } catch (e) { }
-                    done++; setProgress(Math.round((done / missing.length) * 40));
-                });
-                await runWithConcurrency(fallbackTasks, 2);
-            }
-        }
-        if (controller.signal.aborted) return;
-
-        // ── Phase 2: fetch localized versions (non-EN only) ───────────────────
-        const langMap = new Map();
-        if (targetLang !== 'en') {
-            showLoadingOverlay(t('loading_phase2', targetLang.toUpperCase()));
-
-            const needsLang = uniqueNames.map(e => {
-                const pinnedKey = e.setCode && e.collectorNumber ? `${e.setCode}:${e.collectorNumber}` : null;
-                const resolvedCard = (pinnedKey && enMap.get(pinnedKey)) || enMap.get(normalizeCardName(e.name));
-                if (!resolvedCard) return null;
-                const canonicalName = resolvedCard.name.split(' // ')[0].trim();
-                return { entry: e, canonicalName, canonicalKey: normalizeCardName(canonicalName) };
-            }).filter(Boolean);
-
-            const toFetch = [];
-            for (const { entry, canonicalName, canonicalKey } of needsLang) {
-                const cacheKey = canonicalKey + '|' + targetLang;
-                if (state.langCache[cacheKey]) langMap.set(normalizeCardName(entry.name), state.langCache[cacheKey]);
-                else if (!toFetch.find(n => normalizeCardName(n) === canonicalKey)) toFetch.push(canonicalName);
-            }
-
-            if (toFetch.length > 0) {
-                const batches = [];
-                for (let i = 0; i < toFetch.length; i += 12) batches.push(toFetch.slice(i, i + 12));
-                let done = 0;
-                for (const batch of batches) {
-                    if (controller.signal.aborted) break;
-                    try {
-                        const batchMap = await fetchCardLangBatch(batch, targetLang, controller.signal);
-                        for (const { entry, canonicalName, canonicalKey } of needsLang) {
-                            if (!batch.includes(canonicalName)) continue;
-                            const card = batchMap.get(canonicalKey);
-                            if (card) {
-                                langMap.set(normalizeCardName(entry.name), card);
-                                state.langCache[canonicalKey + '|' + targetLang] = card;
-                            }
-                        }
-                    } catch (e) { }
-                    done += batch.length;
-                    setProgress(40 + Math.round((done / toFetch.length) * 40));
-                    if (!controller.signal.aborted) await new Promise(r => setTimeout(r, 400));
-                }
-            }
-        }
-        if (controller.signal.aborted) return;
-
-        // ── Phase 3: build cards[] ────────────────────────────────────────────
-        let errors = 0;
-        for (const { qty, name, setCode, collectorNumber } of parsed) {
-            const key = normalizeCardName(name);
-            const pinnedKey = setCode && collectorNumber ? `${setCode}:${collectorNumber}` : null;
-
-            const baseCard = (pinnedKey && enMap.get(pinnedKey)) || enMap.get(key);
-            const langCard = langMap.get(key);
-            const data = langCard || baseCard;
-
-            if (!data) {
-                errors++;
-                state.cards.push({ qty, name, error: 'Not found in Scryfall database.' });
-                continue;
-            }
-            const imageUrl = extractImageUrl(data, 'small');
-            if (!imageUrl) {
-                errors++;
-                state.cards.push({ qty, name, error: 'No image available' });
-                continue;
-            }
-            state.cards.push({
-                qty,
-                name:            data.name || name,
-                imageUrl,
-                imageUrlHQ:      extractImageUrl(data, 'normal'),
-                pdfImageUrl:     extractImageUrl(data, 'normal'),
-                imageUrl2:       extractFace2Url(data, 'small'),
-                imageUrl2HQ:     extractFace2Url(data, 'normal'),
-                pdfImageUrl2:    extractFace2Url(data, 'normal'),
-                face2Name:       extractFace2Name(data),
-                lang:            data.lang || targetLang,
-                printId:         data.id,
-                setCode:         data.set ? data.set.toUpperCase() : '---',
-                collectorNumber: data.collector_number || null,
-                error:           false,
-                hqLoaded:        false
-            });
-        }
-
-        setProgress(100);
-        renderPreview();
-        updateStats(state.cards.filter(c => !c.error));
-
-        const totalOk = state.cards.filter(c => !c.error).length;
-        if (totalOk === 0) setLog(t('log_error_none'), 'error');
-        else if (errors > 0) setLog(t('log_done_errors', totalOk, errors), 'error');
-        else {
-            setLog(t('log_done', totalOk), 'ok');
-            document.getElementById('step-4').classList.add('active');
-        }
-
-        if (totalOk > 0) document.getElementById('btn-pdf').disabled = false;
-
-        syncDeckInput();
-        upgradePreviewHQ(state.cards);
-
-    } catch (err) {
-        if (err.name !== 'AbortError') {
-            console.error("Critical Failure:", err);
-            setLog('Critical failure processing deck: ' + err.message, 'error');
-        }
-    } finally {
-        state.loading = false;
-        document.getElementById('btn-load').disabled = false;
-        hideLoadingOverlay();
-    }
+// Devuelve la traducción para una clave, llamando la función si aplica
+function t(key, ...args) {
+    const tr  = TRANSLATIONS[currentUILang] || TRANSLATIONS.en;
+    const val = tr[key] ?? TRANSLATIONS.en[key] ?? key;
+    return typeof val === 'function' ? val(...args) : val;
 }
 
-async function updateAllToLatestArts() {
-    const confirmed = confirm(t('confirm_latest_art'));
-    if (!confirmed) return;
-
-    const validCards = state.cards.filter(c => !c.error);
-    if (validCards.length === 0) return;
-
-    const targetLang = getGlobalLang();
-    showLoadingOverlay(`Updating all arts to ${targetLang.toUpperCase()}...`);
-
-    const tasks = validCards.map((card, index) => async () => {
-        try {
-            const query = `!"${card.name}" lang:${targetLang} -is:promo -is:digital`;
-            const url   = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=released&dir=desc`;
-            const res   = await fetchWithRetry(url);
-            const data  = await res.json();
-
-            if (data.data && data.data.length > 0) {
-                const latest = data.data.find(c => c.lang === targetLang) || data.data[0];
-
-                card.imageUrl     = extractImageUrl(latest, 'small');
-                card.imageUrlHQ   = extractImageUrl(latest, 'normal');
-                card.pdfImageUrl  = extractImageUrl(latest, 'normal');
-                card.imageUrl2    = extractFace2Url(latest, 'small');
-                card.imageUrl2HQ  = extractFace2Url(latest, 'normal');
-                card.pdfImageUrl2 = extractFace2Url(latest, 'normal');
-                card.face2Name    = extractFace2Name(latest);
-                card.lang         = latest.lang || targetLang;
-                card.printId      = latest.id;
-                card.setCode      = latest.set ? latest.set.toUpperCase() : '---';
-                card.hqLoaded     = false;
-                card._blob        = null;
-                card._blob2       = null;
-            }
-        } catch (e) {
-            console.error("Error updating:", card.name, e);
-        }
-        setProgress(Math.round(((index + 1) / validCards.length) * 100));
+// Aplica todas las traducciones al DOM y guarda en localStorage
+function setLang(lang) {
+    if (!TRANSLATIONS[lang]) return;
+    currentUILang = lang;
+    try { localStorage.setItem('aetherforge-ui-lang', lang); } catch(e) {}
+    
+    // Actualizar flag y código en el botón
+    const flagEl  = document.getElementById('lang-flag');
+    const labelEl = document.getElementById('lang-label');
+    if (flagEl)  flagEl.textContent  = UI_LANG_FLAGS[lang]  || '🌐';
+    if (labelEl) labelEl.textContent = UI_LANG_LABELS[lang] || lang.toUpperCase();
+    
+    // Traducir todos los elementos marcados con data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const text = t(key);
+        if (typeof text === 'string') el.textContent = text;
     });
-
-    await runWithConcurrency(tasks, 3);
-
-    hideLoadingOverlay();
-    renderPreview();
-    upgradePreviewHQ(state.cards);
-    setLog(`✓ ${validCards.length} cards updated to latest arts.`, 'ok');
+    
+    // Actualizar el label del botón de tema con el nuevo idioma
+    const themeLabel = document.getElementById('theme-label');
+    if (themeLabel) {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        themeLabel.textContent = t(isDark ? 'theme_dark' : 'theme_light');
+    }
+    
+    // Cerrar el menú
+    closeLangMenu();
 }
 
-
-// ── Sync textarea from state.cards ───────────────────────────────────────────
-// Reconstruye el textarea de la izquierda a partir de state.cards.
-// Se llama tras cualquier operación que modifique el mazo (drop, remove, qty).
-function syncDeckInput() {
-    const inputEl = document.getElementById('deck-input');
-    if (!inputEl) return;
-    inputEl.value = state.cards
-        .filter(c => !c.error && !c._isCustom)
-        .map(c => {
-            if (c.setCode && c.setCode !== '---' && c.collectorNumber) {
-                return `${c.qty} ${c.name} (${c.setCode}) ${c.collectorNumber}`;
-            }
-            return `${c.qty} ${c.name}`;
-        })
-        .join('\n');
-    updateStats(parseArena(inputEl.value));
+function toggleLangMenu() {
+    document.getElementById('lang-menu').classList.toggle('open');
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-document.getElementById('deck-input').addEventListener('input', function () {
-    updateStats(parseArena(this.value));
+function closeLangMenu() {
+    const menu = document.getElementById('lang-menu');
+    if (menu) menu.classList.remove('open');
+}
+
+// Cerrar el menú al hacer clic fuera
+document.addEventListener('click', e => {
+    if (!e.target.closest('.lang-selector')) closeLangMenu();
 });
+
+// Restaurar idioma guardado al cargar la página
+(function initLang() {
+    try {
+        const saved = localStorage.getItem('aetherforge-ui-lang');
+        if (saved && TRANSLATIONS[saved]) setLang(saved);
+    } catch(e) {}
+})();
