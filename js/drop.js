@@ -3,39 +3,44 @@
 // and any plain-text card name or Scryfall URL.
 // Depends on: utils.js, state.js, api.js, ui.js
 
-// ── Parse a drop event into { name, setCode, collectorNumber } or null ────────
+// ── Parse a drop event into { name, setCode, collectorNumber, id } or null ────
 function parseDropData(e) {
     const plain = (e.dataTransfer.getData('text/plain') || '').trim();
     const uris  = (e.dataTransfer.getData('text/uri-list') || '').trim();
     const html  = (e.dataTransfer.getData('text/html') || '').trim();
 
-    // 1. URL de Scryfall con set + collector number
-    //    Formatos conocidos:
-    //      https://scryfall.com/card/mh3/237/sol-ring
-    //      https://cards.scryfall.io/large/front/...  (no útil directamente)
+    // 1. URL de Scryfall con set + collector number (Mejorado para no exigir '/' final)
     for (const candidate of [plain, uris]) {
-        const m = candidate.match(/scryfall\.com\/card\/([a-z0-9]{2,6})\/(\d+[a-z]?)\//i);
-        if (m) return { name: null, setCode: m[1].toLowerCase(), collectorNumber: m[2] };
+        const m = candidate.match(/scryfall\.com\/card\/([a-z0-9]{2,6})\/([^/?\s]+)/i);
+        if (m) return { name: null, setCode: m[1].toLowerCase(), collectorNumber: m[2], id: null };
     }
 
-    // 2. Nombre de carta extraído del HTML (EDHREC, Moxfield arrastran el nombre en el atributo alt o data-*)
+    // 2. URL del servidor de imágenes de Scryfall (cards.scryfall.io)
+    // Al arrastrar la imagen desde la ficha individual, extraemos el UUID único de la carta
+    for (const candidate of [plain, uris]) {
+        const idMatch = candidate.match(/cards\.scryfall\.io\/[^/]+\/[^/]+\/[a-z0-9]\/[a-z0-9]\/([a-z0-9-]{36})/i);
+        if (idMatch) return { name: null, setCode: null, collectorNumber: null, id: idMatch[1] };
+    }
+
+    // 3. Nombre de carta extraído del HTML (Soportando comillas simples o dobles)
     if (html) {
-        const altMatch    = html.match(/alt="([^"]+)"/i);
-        const dataMatch   = html.match(/data-card-name="([^"]+)"/i);
-        const titleMatch  = html.match(/title="([^"]+)"/i);
-        const candidate   = (dataMatch || altMatch || titleMatch)?.[1]?.trim();
-        // Descartar nombres vacíos, URLs o texto genérico
+        const altMatch    = html.match(/alt=["']([^"']+)["']/i);
+        const dataMatch   = html.match(/data-card-name=["']([^"']+)["']/i);
+        const titleMatch  = html.match(/title=["']([^"']+)["']/i);
+        let candidate   = (dataMatch || altMatch || titleMatch)?.[1]?.trim();
+        
         if (candidate && candidate.length > 1 && !candidate.startsWith('http')) {
-            return { name: candidate, setCode: null, collectorNumber: null };
+            // Limpiar entidades HTML comunes por si acaso
+            candidate = candidate.replace(/&amp;/g, '&');
+            return { name: candidate, setCode: null, collectorNumber: null, id: null };
         }
     }
 
-    // 3. Texto plano — puede ser nombre de carta o URL no-Scryfall
+    // 4. Texto plano — puede ser nombre de carta o URL no-Scryfall
     if (plain && !plain.startsWith('http') && plain.length > 1) {
-        // Filtramos basura: si tiene saltos de línea o es muy largo, ignoramos
         const singleLine = plain.split('\n')[0].trim();
         if (singleLine.length > 1 && singleLine.length < 120) {
-            return { name: singleLine, setCode: null, collectorNumber: null };
+            return { name: singleLine, setCode: null, collectorNumber: null, id: null };
         }
     }
 
@@ -44,10 +49,12 @@ function parseDropData(e) {
 
 // ── Resolve the parsed data to a Scryfall card object and add to state ────────
 async function resolveAndAddDroppedCard(parsed) {
-    const { name, setCode, collectorNumber } = parsed;
+    const { name, setCode, collectorNumber, id } = parsed;
 
     let entry;
-    if (setCode && collectorNumber) {
+    if (id) {
+        entry = { id }; // Scryfall acepta buscar directamente por ID en el endpoint de colecciones
+    } else if (setCode && collectorNumber) {
         entry = { setCode, collectorNumber };
     } else if (name) {
         entry = { name };
@@ -58,7 +65,11 @@ async function resolveAndAddDroppedCard(parsed) {
     const { map } = await fetchCollectionBatch([entry]);
 
     let data = null;
-    if (setCode && collectorNumber) {
+    if (id) {
+        data = map.get(id);
+        if (!data && map.size > 0) data = map.values().next().value; // Fallback al primer resultado devuelto
+    }
+    if (!data && setCode && collectorNumber) {
         data = map.get(`${setCode}:${collectorNumber}`);
     }
     if (!data && name) {
@@ -108,7 +119,6 @@ async function resolveAndAddDroppedCard(parsed) {
 function setDropState(el, active) {
     el.classList.toggle('drop-active', active);
 }
-
 function showDropToast(msg, type = 'ok') {
     // Reutilizamos setLog del sistema existente
     setLog(msg, type);
