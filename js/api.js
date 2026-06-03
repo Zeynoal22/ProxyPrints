@@ -1,13 +1,15 @@
 // ── api.js ────────────────────────────────────────────────────────────────────
 // All Scryfall API calls. Depends on: utils.js, state.js
 
-// ── Batch collection fetch ────────────────────────────────────────────────────
+// ── Batch collection fetch (CORREGIDO) ────────────────────────────────────────
 async function fetchCollectionBatch(entries) {
     const identifiers = entries.map(e => {
         if (typeof e === 'string') return { name: e };
+        if (e.id) return { id: e.id }; // ◄ CORRECCIÓN 1: Soportar búsqueda directa por ID de Scryfall
         if (e.setCode && e.collectorNumber) return { set: e.setCode, collector_number: e.collectorNumber };
         return { name: e.name };
     });
+    
     const body = JSON.stringify({ identifiers });
     const res = await fetchWithRetry('https://api.scryfall.com/cards/collection', {
         method: 'POST',
@@ -15,13 +17,16 @@ async function fetchCollectionBatch(entries) {
         body
     });
     if (!res || !res.ok) throw new Error('Error in batch collection');
+    
     const data = await res.json();
     const map = new Map();
     for (const card of (data.data || [])) {
         map.set(normalizeCardName(card.name), card);
+        if (card.id) map.set(card.id, card); // ◄ CORRECCIÓN 2: Guardar también por ID para que drop.js lo encuentre directo
         if (card.name.includes(' // ')) map.set(normalizeCardName(card.name.split(' // ')[0].trim()), card);
         if (card.set && card.collector_number) map.set(`${card.set}:${card.collector_number}`, card);
     }
+    
     for (const nf of (data.not_found || [])) {
         if (!nf.name) continue;
         try {
@@ -31,6 +36,7 @@ async function fetchCollectionBatch(entries) {
                 const rCard = await rRes.json();
                 map.set(normalizeCardName(nf.name), rCard);
                 map.set(normalizeCardName(rCard.name), rCard);
+                if (rCard.id) map.set(rCard.id, rCard);
                 if (rCard.name.includes(' // ')) map.set(normalizeCardName(rCard.name.split(' // ')[0].trim()), rCard);
             }
         } catch (e) { }
