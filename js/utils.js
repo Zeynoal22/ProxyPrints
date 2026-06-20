@@ -3,9 +3,38 @@
 // concurrency limiter. No DOM access, no global state.
 
 const LANG_NAMES = { en: 'EN', es: 'ES', fr: 'FR', de: 'DE', it: 'IT', pt: 'PT', ja: 'JA', ko: 'KO', ru: 'RU', zhs: 'ZHS', zht: 'ZHT', ph: 'PH' };
+// LRU cache para blobs de imagen: evita consumo de memoria ilimitado en sesiones
+// largas. Máximo 200 entradas; cuando se supera, descarta las más antiguas.
+const IMAGE_BLOB_CACHE_LIMIT = 200;
 const imageBlobCache = new Map();
+function blobCacheGet(url) {
+    if (!imageBlobCache.has(url)) return undefined;
+    // Mover al final (más reciente) — LRU
+    const val = imageBlobCache.get(url);
+    imageBlobCache.delete(url);
+    imageBlobCache.set(url, val);
+    return val;
+}
+function blobCacheSet(url, blob) {
+    if (imageBlobCache.has(url)) imageBlobCache.delete(url);
+    imageBlobCache.set(url, blob);
+    if (imageBlobCache.size > IMAGE_BLOB_CACHE_LIMIT) {
+        // Eliminar la entrada más antigua (primera del Map)
+        imageBlobCache.delete(imageBlobCache.keys().next().value);
+    }
+}
 
-// ── String normalization ──────────────────────────────────────────────────────
+// ── HTML escaping ─────────────────────────────────────────────────────────────
+// Úsala siempre que insertes datos externos (nombres de cartas, mensajes de
+// error de Scryfall, etc.) en innerHTML para evitar XSS.
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 function normalizeCardName(name) {
     return String(name).normalize('NFKD')
         .replace(/[''`´]/g, "'")
@@ -14,6 +43,17 @@ function normalizeCardName(name) {
         .replace(/\s+/g, " ")
         .trim()
         .toLowerCase();
+}
+
+// ── Sanitize a card name for use in Scryfall API queries ──────────────────────
+// Convierte comillas/guiones tipográficos a sus equivalentes ASCII para que
+// fuzzy/named/search no devuelvan 404 (lo cual aparece como error CORS en consola).
+function sanitizeNameForApi(name) {
+    return String(name).normalize('NFKD')
+        .replace(/[''`´]/g, "'")
+        .replace(/[""]/g, '"')
+        .replace(/[\u2010-\u2015\u2212]/g, "-")
+        .trim();
 }
 
 // ── Image URL extraction ──────────────────────────────────────────────────────
@@ -73,7 +113,8 @@ async function fetchWithRetry(url, opts = {}, retries = 3, baseDelay = 500, time
 }
 
 async function fetchImageBlob(url, retries = 3, timeoutMs = 20000) {
-    if (imageBlobCache.has(url)) return imageBlobCache.get(url);
+    const cached = blobCacheGet(url);
+    if (cached) return cached;
     const fetchUrl = url + (url.includes('?') ? '&' : '?') + '_cb=' + Date.now();
     for (let attempt = 0; attempt <= retries; attempt++) {
         const ctrl = new AbortController();
@@ -83,7 +124,7 @@ async function fetchImageBlob(url, retries = 3, timeoutMs = 20000) {
             clearTimeout(timer);
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const blob = await res.blob();
-            imageBlobCache.set(url, blob);
+            blobCacheSet(url, blob);
             return blob;
         } catch (e) {
             clearTimeout(timer);
