@@ -95,26 +95,26 @@ const tasks = unique.map(card => async () => {
         const printDecklist = document.getElementById('pdf-decklist')?.checked || false;
 
         // ── Cut marks ─────────────────────────────────────────────────────────
-        function drawCutMarks(doc, col, row, x, y, cw, ch) {
-            const lw = marksSetting === 'thick' ? 0.4 : 0.15;
-            doc.setDrawColor(60, 60, 60); doc.setLineWidth(lw);
-            if (col === 0) {
-                doc.line(0, y, x, y);
-                doc.line(0, y + ch, x, y + ch);
-            }
-            if (col === COLS - 1) {
-                doc.line(x + cw, y, PAGE_W, y);
-                doc.line(x + cw, y + ch, PAGE_W, y + ch);
-            }
-            if (row === 0) {
-                doc.line(x, 0, x, y);
-                doc.line(x + cw, 0, x + cw, y);
-            }
-            if (row === ROWS - 1) {
-                doc.line(x, y + ch, x, PAGE_H);
-                doc.line(x + cw, y + ch, x + cw, PAGE_H);
-            }
-        }
+        // Líneas cortas en las esquinas, estilo MTGPrint: salen desde ~1mm fuera
+        // del vértice de la carta (pequeño gap), duran ~3mm, línea muy fina.
+function drawCutMarks(doc, col, row, x, y, cw, ch) {
+    doc.setDrawColor(80, 80, 80); doc.setLineWidth(0.1);
+
+    const corners = [
+        [x,      y,      -1, -1],
+        [x + cw, y,       1, -1],
+        [x,      y + ch, -1,  1],
+        [x + cw, y + ch,  1,  1],
+    ];
+
+    for (const [cx, cy, dx, dy] of corners) {
+        const hEnd = dx < 0 ? 0 : PAGE_W;
+        doc.line(cx, cy, hEnd, cy);
+
+        const vEnd = dy < 0 ? 0 : PAGE_H;
+        doc.line(cx, cy, cx, vEnd);
+    }
+}
 
         // ── Generic card back (duplex mode) ───────────────────────────────────
         const dfcMode = document.getElementById('pdf-dfc').value;
