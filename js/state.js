@@ -7,7 +7,13 @@ const state = {
     loading: false,
     printsCache: {},
     abortController: null,
-    langCache: {}
+    langCache: {},
+    // Mapa persistente de artes fijados manualmente por el usuario via el modal
+    // "Print Catalog". Clave = nombre normalizado de la carta, valor = {setCode, collectorNumber}.
+    // Sobrevive a recargas del deck (loadDeck) y es independiente del idioma de busqueda:
+    // si cambias el idioma, se intenta esa misma edicion en el idioma nuevo, y si no
+    // existe en ese idioma se usa la version base (EN) de esa edicion como fallback.
+    pinnedPrints: new Map()
 };
 
 const modal = {
@@ -44,7 +50,15 @@ function parseArena(text) {
 
         name = name.replace(/\s+\/\/\s+/g, ' // ').replace(/\s+\/\s+/g, ' // ');
         name = name.split(' // ')[0].trim();
-        if (qty > 0 && name) result.push({ qty, name, setCode, collectorNumber });
+
+        // Detectar prefijo T: para tokens (ej: "1 T:Treasure", "1 T:Goblin")
+        let isToken = false;
+        if (/^T:/i.test(name)) {
+            name = name.slice(2).trim();
+            isToken = true;
+        }
+
+        if (qty > 0 && name) result.push({ qty, name, setCode, collectorNumber, _isToken: isToken });
     }
     return result;
 }
