@@ -102,7 +102,15 @@ function renderPreview() {
         block.dataset.cardIdx = index;
 
         if (card.error) {
-            // ... mantener código de error intacto ...
+            block.className += ' error-card';
+            const errorMsg = typeof card.error === 'string' ? card.error : t('card_error_generic');
+            block.innerHTML = `
+                <div class="error-card-icon">⚠</div>
+                <div class="error-card-name">${escHtml(card.name)}</div>
+                <div class="error-card-msg">${escHtml(errorMsg)}</div>
+                <button class="card-remove-btn error-card-remove" title="${escHtml(t('card_error_remove'))}" onclick="event.stopPropagation(); removeCard(${index})">✕</button>
+            `;
+            block.onclick = null;
         } else {
             const badgeLang = card._isCustom
                 ? `<span class="card-badge-ui badge-custom">CUST</span>`
@@ -121,7 +129,7 @@ function renderPreview() {
             const indicatorCheck = (duplexActive && isSelected) ? `<div class="card-back-indicator">✓</div>` : '';
 
             block.innerHTML = `
-                <img src="${targetImage}" alt="${card.name}" loading="lazy" />
+                <img src="${targetImage}" alt="${escHtml(card.name)}" loading="lazy" />
                 ${indicatorCheck}
                 <div class="card-meta-overlay">
                     <div class="card-info-top">
@@ -136,9 +144,9 @@ function renderPreview() {
                         </div>
                     </div>
                     <div class="card-info-bottom">
-                        <div class="card-title-text">${card.name}</div>
+                        <div class="card-title-text">${escHtml(card.name)}</div>
                         <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                            <span class="card-set-text">${setCode}</span>
+                            <span class="card-set-text">${escHtml(setCode)}</span>
                             <div style="display:flex; gap:4px; margin-left:auto;">${badgeLang}${badgeDfc}${badgeBack}</div>
                         </div>
                     </div>
@@ -194,6 +202,13 @@ upgradePreviewHQ._id = 0;
 
 // ── Card actions ──────────────────────────────────────────────────────────────
 function removeCard(i) {
+    const card = state.cards[i];
+    // Si la carta tenía un arte fijado manualmente, libera el pin persistente:
+    // así, si vuelves a añadir esa carta más adelante, no hereda una edición vieja
+    // que ya descartaste a propósito.
+    if (card && card._pinnedPrint) {
+        state.pinnedPrints.delete(normalizeCardName(card.name));
+    }
     state.cards.splice(i, 1);
     updateStats(state.cards.filter(c => !c.error));
     renderPreview();
@@ -307,10 +322,10 @@ async function openModal(i) {
     document.getElementById('art-modal').classList.add('open');
     document.body.style.overflow = 'hidden';
 
-    await loadPrints(card.name, modal.currentLang);
+    await loadPrints(card.name, modal.currentLang, !!card._isToken);
 }
 
-async function loadPrints(name, lang) {
+async function loadPrints(name, lang, isToken = false) {
     const grid = document.getElementById('prints-grid');
     grid.innerHTML = '<div class="prints-loading" style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);"><div class="spinner-ring" style="margin:0 auto 12px;"></div> Indexing alternative arts...</div>';
     document.getElementById('modal-print-count').textContent = '';
@@ -320,15 +335,37 @@ async function loadPrints(name, lang) {
     yearSelect.style.display = 'none';
     yearLabel.style.display  = 'none';
 
-    try {
-        let allCards = await fetchAllPages(
-            `https://api.scryfall.com/cards/search?q=${encodeURIComponent(`!"${name}" lang:${lang}`)}&unique=prints&order=released&dir=desc`
-        );
+    // Para tokens: añadir "type:token" a la query para que Scryfall devuelva fichas
+    // en lugar de cartas normales. Se usan queries separadas con fallbacks progresivos.
 
-        if (allCards.length === 0 && lang !== 'en') {
+    try {
+        let allCards = [];
+
+        if (isToken) {
+            // Para tokens: primero nombre exacto + type:token, luego nombre parcial si falla
             allCards = await fetchAllPages(
-                `https://api.scryfall.com/cards/search?q=${encodeURIComponent(`!"${name}"`)}&unique=prints&order=released&dir=desc`
+                `https://api.scryfall.com/cards/search?q=${encodeURIComponent(`!"${name}" type:token lang:${lang}`)}&unique=prints&order=released&dir=desc`
             );
+            if (allCards.length === 0) {
+                allCards = await fetchAllPages(
+                    `https://api.scryfall.com/cards/search?q=${encodeURIComponent(`!"${name}" type:token`)}&unique=prints&order=released&dir=desc`
+                );
+            }
+            // Fallback parcial: "Zombie type:token" sin comillas captura "Zombie *" tokens
+            if (allCards.length === 0) {
+                allCards = await fetchAllPages(
+                    `https://api.scryfall.com/cards/search?q=${encodeURIComponent(`${name} type:token`)}&unique=art&order=released&dir=desc`
+                );
+            }
+        } else {
+            allCards = await fetchAllPages(
+                `https://api.scryfall.com/cards/search?q=${encodeURIComponent(`!"${name}" lang:${lang}`)}&unique=prints&order=released&dir=desc`
+            );
+            if (allCards.length === 0 && lang !== 'en') {
+                allCards = await fetchAllPages(
+                    `https://api.scryfall.com/cards/search?q=${encodeURIComponent(`!"${name}"`)}&unique=prints&order=released&dir=desc`
+                );
+            }
         }
 
         if (allCards.length === 0) {
@@ -394,11 +431,11 @@ function renderPrintsGrid(prints) {
         const foilBadge = p.foil ? '<span class="print-badge" style="background:linear-gradient(45deg, #f59e0b, #ec4899)">Foil</span>' : '';
         const r = p.rarity ? p.rarity.charAt(0).toUpperCase() : '';
         item.innerHTML = `
-            <img src="${imgUrl}" alt="${p.set_name}" />
+            <img src="${imgUrl}" alt="${escHtml(p.set_name)}" />
             ${foilBadge}
             <div class="print-meta">
-                <span class="set-name">${p.set_name}</span>
-                <span class="set-detail">${p.set.toUpperCase()} · ${p.released_at.substring(0, 4)} · [${r}]</span>
+                <span class="set-name">${escHtml(p.set_name)}</span>
+                <span class="set-detail">${escHtml(p.set.toUpperCase())} · ${escHtml(p.released_at.substring(0, 4))} · [${escHtml(r)}]</span>
             </div>
         `;
         grid.appendChild(item);
@@ -421,7 +458,7 @@ async function onModalLangChange() {
     modal.currentLang = lang;
     modal.selectedPrintId = null;
     const card = state.cards[modal.cardIndex];
-    if (card) await loadPrints(card.name, lang);
+    if (card) await loadPrints(card.name, lang, !!card._isToken);
 }
 
 function applySelection() {
@@ -457,8 +494,20 @@ function applySelection() {
     card.lang         = print.lang || modal.currentLang;
     card.printId      = print.id;
     card.setCode      = print.set ? print.set.toUpperCase() : '---';
+    card.collectorNumber = print.collector_number || null;
     card.hqLoaded     = false;
     card._blob = null; card._blob2 = null;
+    card._pinnedPrint = true; // Solo esta carta queda fijada a (SET) número en el decklist
+
+    // Guarda el pin en el mapa persistente para que sobreviva a recargas del
+    // deck (loadDeck) aunque el textarea no lleve la anotación (SET) num.
+    if (print.set && print.collector_number) {
+        const pinKey = normalizeCardName(card.name);
+        state.pinnedPrints.set(pinKey, {
+            setCode: print.set.toLowerCase(),
+            collectorNumber: print.collector_number
+        });
+    }
 
     const inputEl = document.getElementById('deck-input');
     if (inputEl && print.set && print.collector_number) {
