@@ -644,6 +644,43 @@
             border: 1px solid var(--border);
         }
 
+        .card-thumb.error-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+            text-align: center;
+            cursor: default;
+            background: rgba(225, 29, 72, 0.08);
+            border: 1px solid #e11d48;
+        }
+
+            .error-card-icon {
+                font-size: 1.8rem;
+                line-height: 1;
+            }
+
+            .error-card-name {
+                font-size: 0.85rem;
+                font-weight: 700;
+                color: #fff;
+                word-break: break-word;
+            }
+
+            .error-card-msg {
+                font-size: 0.72rem;
+                color: #fca5a5;
+                line-height: 1.3;
+            }
+
+            .error-card-remove {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+            }
+
         @keyframes loading-skeleton {
             0% {
                 background-position: 200% 0;
