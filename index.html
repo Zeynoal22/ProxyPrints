@@ -6,7 +6,7 @@
     <title>AetherForge | Proxy Studio</title>
     <link rel="stylesheet" href="css/styles.css" />
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <style>
         /* ── Drop zone feedback ──────────────────────────────────────────── */
         #preview-grid.drop-active {
@@ -20,6 +20,171 @@
             outline-offset: -2px;
             background: color-mix(in srgb, var(--gold) 5%, transparent);
         }
+        /* ── Help Panel ──────────────────────────────────────────────────── */
+        #help-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 900;
+        }
+        #help-overlay.open { display: block; }
+
+        #help-panel {
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            width: min(420px, 92vw);
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            z-index: 901;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+            box-shadow: -6px 0 32px rgba(0,0,0,0.35);
+        }
+        #help-panel.open { transform: translateX(0); }
+
+        .help-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid var(--border);
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--gold);
+            flex-shrink: 0;
+        }
+        .help-header button {
+            background: none; border: none;
+            color: var(--text-muted); cursor: pointer;
+            font-size: 1.1rem; padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .help-header button:hover { background: var(--surface-elevated); color: var(--text); }
+
+        .help-body {
+            overflow-y: auto;
+            flex: 1;
+            padding: 8px 0 24px;
+        }
+
+        #help-panel details {
+            border-bottom: 1px solid var(--border);
+        }
+        #help-panel summary {
+            padding: 14px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--text);
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
+        #help-panel summary::-webkit-details-marker { display: none; }
+        #help-panel summary::after {
+            content: '›';
+            margin-left: auto;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+        #help-panel details[open] summary::after { transform: rotate(90deg); }
+        #help-panel summary:hover { background: var(--surface-elevated); }
+
+        .help-section {
+            padding: 4px 20px 16px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .help-section p { margin: 0; }
+        .help-section strong { color: var(--text); }
+        .help-section a { color: var(--gold); text-decoration: none; }
+        .help-section a:hover { text-decoration: underline; }
+        .help-section em { color: var(--text); font-style: italic; }
+
+        .help-example {
+            background: var(--bg-alt, #0d1117);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            position: relative;
+        }
+        .help-example-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--gold);
+            margin-bottom: 6px;
+        }
+        .help-example pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: var(--text);
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .help-copy-btn {
+            margin-top: 10px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .help-copy-btn:hover { background: var(--surface-elevated); color: var(--text); }
+        .help-copy-btn.copied { color: #4ade80; border-color: #4ade80; }
+
+        #beta-banner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 18px;
+            background: color-mix(in srgb, var(--gold) 12%, var(--surface));
+            border-bottom: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            position: relative;
+        }
+        .beta-banner-icon {
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        #beta-banner a {
+            color: var(--gold);
+            font-weight: 600;
+            text-decoration: none;
+        }
+        #beta-banner a:hover { text-decoration: underline; }
+        .beta-banner-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .beta-banner-close:hover { background: color-mix(in srgb, var(--gold) 15%, transparent); color: var(--text); }
+
         .drop-hint {
             display: flex;
             align-items: center;
@@ -95,6 +260,9 @@
             </div>
         </div>
         <div class="header-actions">
+            <button class="theme-toggle" onclick="toggleHelpPanel()" id="help-btn" title="Help">
+                <span>?</span> <span data-i18n="help_btn">Help</span>
+            </button>
             <div class="lang-selector">
                 <button class="theme-toggle lang-btn" onclick="toggleLangMenu()" id="lang-btn">
                     <span ></span> <span id="lang-label">EN</span>
@@ -112,6 +280,16 @@
             </button>
         </div>
     </header>
+
+    <div id="beta-banner">
+        <span class="beta-banner-icon">⚠</span>
+        <span>
+            <span data-i18n="beta_notice_pre"></span>
+            <a href="https://x.com/CPlaneswalkers" target="_blank">@CPlaneswalkers</a>
+            <span data-i18n="beta_notice_post"></span>
+        </span>
+        <button class="beta-banner-close" onclick="this.parentElement.style.display='none'" title="Dismiss">✕</button>
+    </div>
 
     <main>
         <div class="panel">
@@ -204,6 +382,7 @@
                         <span data-i18n="pdf_gap">Card Gap</span>
                         <select id="pdf-gap">
                             <option value="0" data-i18n="opt_gap_0">None (0mm)</option>
+                            <option value="0.3" data-i18n="opt_gap_min" selected>Minimal (0.3mm)</option>
                             <option value="1" data-i18n="opt_gap_1">1mm</option>
                             <option value="2" data-i18n="opt_gap_2">2mm</option>
                             <option value="3" data-i18n="opt_gap_3">3mm</option>
@@ -251,6 +430,10 @@
             <div style="display:flex; flex-direction:column; gap:12px; margin-top:auto;">
                 <button type="button" class="btn btn-primary" id="btn-load" onclick="loadDeck()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" /></svg> <span data-i18n="btn_sync">Sync Cards</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="btn-restore" onclick="restoreLastDeck()" style="display:none">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    <span data-i18n="btn_restore">Load Previous Deck</span>
                 </button>
                 <button type="button" class="btn btn-secondary" id="btn-custom-upload" onclick="document.getElementById('custom-img-input').click()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
@@ -325,13 +508,107 @@
     <footer>
         <span data-i18n="footer_text">Multimedia assets provided by</span> <a href="https://scryfall.com" target="_blank">Scryfall Engine</a>. Studio for personal use and playtesting. <br>
     </footer>
-    <script src="js/i18n.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/state.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/pdf.js"></script>
-    <script src="js/drop.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/i18n.js" defer></script>
+    <script src="js/utils.js" defer></script>
+    <script src="js/state.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/ui.js" defer></script>
+    <script src="js/pdf.js" defer></script>
+    <script src="js/drop.js" defer></script>
+    <script src="js/app.js" defer></script>
+
+    <!-- ── Help Panel ──────────────────────────────────────────────────────── -->
+    <div id="help-overlay" onclick="if(event.target===this) toggleHelpPanel()"></div>
+    <aside id="help-panel">
+        <div class="help-header">
+            <span data-i18n="help_title">How to use AetherForge</span>
+            <button onclick="toggleHelpPanel()">✕</button>
+        </div>
+        <div class="help-body">
+
+            <!-- 1. Pegar lista -->
+            <details open>
+                <summary data-i18n="help_s1_title">📋 Paste a decklist</summary>
+                <div class="help-section">
+                    <p data-i18n="help_s1_p1">Paste your deck in Arena or MTGO format: quantity followed by card name, one per line. You can also specify a set and collector number.</p>
+                    <div class="help-example">
+                        <div class="help-example-label" data-i18n="help_example">Example</div>
+                        <pre>1 Sol Ring
+4 Lightning Bolt
+1 Black Lotus (VMA) 4
+1 Tymna the Weaver</pre>
+                        <button class="help-copy-btn" onclick="copyExample(this)">⧉ <span data-i18n="help_copy">Copy</span></button>
+                    </div>
+                    <p data-i18n="help_s1_p2">Then click <strong>Sync Cards</strong> to load the images.</p>
+                </div>
+            </details>
+
+            <!-- 2. Elegir artes -->
+            <details>
+                <summary data-i18n="help_s2_title">🎨 Choose alternative arts</summary>
+                <div class="help-section">
+                    <p data-i18n="help_s2_p1">Click any card in the grid to open the Print Catalog. There you can browse all available printings filtered by language and year.</p>
+                    <p data-i18n="help_s2_p2">Once you pick an art and confirm, that card is pinned to that exact printing — it will be remembered even if you reload the deck.</p>
+                    <p data-i18n="help_s2_p3">Use <em>Update to Latest Arts</em> to reset all cards to their most recent printing in the selected language.</p>
+                </div>
+            </details>
+
+            <!-- 3. Drag & drop Scryfall/EDHREC -->
+            <details>
+                <summary data-i18n="help_s3_title">🖱️ Drag & drop from Scryfall / EDHREC</summary>
+                <div class="help-section">
+                    <p data-i18n="help_s3_p1">You can drag any card image directly from <strong>Scryfall</strong> or <strong>EDHREC</strong> and drop it onto the card grid or the decklist textarea — the card will be added automatically.</p>
+                    <p data-i18n="help_s3_p2">If the card already exists in your deck, its quantity increases by 1 instead of adding a duplicate.</p>
+                </div>
+            </details>
+
+            <!-- 4. Tokens desde Scryfall -->
+            <details>
+                <summary data-i18n="help_s4_title">🪙 Add tokens from Scryfall</summary>
+                <div class="help-section">
+                    <p data-i18n="help_s4_p1">To add a token, go to <a href="https://scryfall.com" target="_blank">scryfall.com</a>, search for the token (e.g. <em>Treasure Token</em>), and drag its image to the grid.</p>
+                    <p data-i18n="help_s4_p2">You can also type it in the decklist using the <strong>T:</strong> prefix:</p>
+                    <div class="help-example">
+                        <div class="help-example-label" data-i18n="help_example">Example</div>
+                        <pre>1 T:Treasure
+1 T:Goblin</pre>
+                        <button class="help-copy-btn" onclick="copyExample(this)">⧉ <span data-i18n="help_copy">Copy</span></button>
+                    </div>
+                </div>
+            </details>
+
+            <!-- 5. Cartas custom -->
+            <details>
+                <summary data-i18n="help_s5_title">🖼️ Add custom card images</summary>
+                <div class="help-section">
+                    <p data-i18n="help_s5_p1">Click <strong>Add Custom Card</strong> to upload your own images (PNG, JPG, WebP). They will appear in the grid and be included in the PDF.</p>
+                    <p data-i18n="help_s5_p2">Custom cards are not linked to Scryfall, so they won't appear in the decklist textarea and won't be affected by Sync or language changes.</p>
+                </div>
+            </details>
+
+            <!-- 6. Configurar PDF -->
+            <details>
+                <summary data-i18n="help_s6_title">📄 Configure the PDF</summary>
+                <div class="help-section">
+                    <p><strong data-i18n="help_s6_scale">Scale:</strong> <span data-i18n="help_s6_scale_desc">Real Size prints at exact MTG card dimensions (63×88mm). Fit to Page scales cards to fill the sheet.</span></p>
+                    <p><strong data-i18n="help_s6_bleed">Bleed:</strong> <span data-i18n="help_s6_bleed_desc">Adds 2mm around each card so cuts don't leave white edges. Recommended for guillotine cutting.</span></p>
+                    <p><strong data-i18n="help_s6_gap">Card gap:</strong> <span data-i18n="help_s6_gap_desc">Space between cards. Minimal (0.3mm) works best with cut marks.</span></p>
+                    <p><strong data-i18n="help_s6_marks">Cut marks:</strong> <span data-i18n="help_s6_marks_desc">Thin lines at the corners of each card to guide cutting. Enable together with a small gap for best results.</span></p>
+                    <p><strong data-i18n="help_s6_quality">Quality:</strong> <span data-i18n="help_s6_quality_desc">Higher quality = larger file. Normal (300 DPI) is the best balance for printing.</span></p>
+                </div>
+            </details>
+
+            <!-- 7. Guardar y recuperar -->
+            <details>
+                <summary data-i18n="help_s7_title">💾 Save and restore your deck</summary>
+                <div class="help-section">
+                    <p data-i18n="help_s7_p1">AetherForge automatically saves your decklist and pinned arts in your browser's local storage every time you make a change.</p>
+                    <p data-i18n="help_s7_p2">Use the <strong>Load Previous Deck</strong> button to restore the last saved deck, including all art choices.</p>
+                    <p data-i18n="help_s7_p3">⚠ Clearing your browser data will erase saved decks. To keep your work safe, copy the decklist text to a file.</p>
+                </div>
+            </details>
+
+        </div>
+    </aside>
 </body>
 </html>
