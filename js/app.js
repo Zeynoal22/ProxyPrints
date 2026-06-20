@@ -31,6 +31,18 @@ async function loadDeck() {
             return;
         }
 
+        // Aplica artes fijados manualmente en sesiones/cargas anteriores (state.pinnedPrints)
+        // a las lineas que no traigan ya una anotacion (SET) num explicita. Esto permite
+        // que el pin sobreviva a un "Sync Cards" aunque el textarea solo tenga el nombre.
+        for (const entry of parsed) {
+            if (entry.setCode && entry.collectorNumber) continue; // ya viene anotado en la linea
+            const pin = state.pinnedPrints.get(normalizeCardName(entry.name));
+            if (pin) {
+                entry.setCode = pin.setCode;
+                entry.collectorNumber = pin.collectorNumber;
+            }
+        }
+
         if (state.abortController) state.abortController.abort();
         const controller = new AbortController();
         state.abortController = controller;
@@ -43,28 +55,59 @@ async function loadDeck() {
 
         const uniqueNames = [...new Map(parsed.map(p => [normalizeCardName(p.name), p])).values()];
 
+        // Separar tokens (prefijo T:) del resto — se resuelven con endpoint distinto
+        const tokenEntries  = uniqueNames.filter(e => e._isToken);
+        const normalEntries = uniqueNames.filter(e => !e._isToken);
+
         showLoadingOverlay(t('loading_phase1', uniqueNames.length));
         setLog('Searching Scryfall database...', '');
 
         const grid = document.getElementById('preview-grid');
         grid.innerHTML = Array(Math.min(uniqueNames.length, 8)).fill('<div class="skeleton-card"></div>').join('');
 
-        // ── Phase 1: fetch EN base data (batch + fallback) ────────────────────
+        // ── Phase 0: resolver tokens ──────────────────────────────────────────
         const enMap = new Map();
+        if (tokenEntries.length > 0) {
+            const tokenTasks = tokenEntries.map(entry => async () => {
+                if (controller.signal.aborted) return;
+                try {
+                    // Scryfall: buscar por nombre exacto dentro de type:token
+                    const q = encodeURIComponent(`!"${sanitizeNameForApi(entry.name)}" type:token`);
+                    const res = await fetchWithRetry(
+                        `https://api.scryfall.com/cards/search?q=${q}&order=released&dir=desc&unique=art`,
+                        { signal: controller.signal }
+                    );
+                    if (res && res.ok) {
+                        const data = await res.json();
+                        const card = (data.data || []).find(c => hasValidImage(c));
+                        if (card) {
+                            enMap.set(normalizeCardName(entry.name), card);
+                            enMap.set(normalizeCardName(card.name), card);
+                            if (card.set && card.collector_number)
+                                enMap.set(`${card.set}:${card.collector_number}`, card);
+                        }
+                    }
+                } catch (e) { }
+            });
+            await runWithConcurrency(tokenTasks, 3);
+        }
+        if (controller.signal.aborted) return;
+
+        // ── Phase 1: fetch EN base data (batch + fallback) ────────────────────
         let batchOk = false;
         try {
-            for (let i = 0; i < uniqueNames.length; i += 75) {
+            for (let i = 0; i < normalEntries.length; i += 75) {
                 if (controller.signal.aborted) break;
-                const chunk = uniqueNames.slice(i, i + 75);
+                const chunk = normalEntries.slice(i, i + 75);
                 const { map } = await fetchCollectionBatch(chunk);
                 for (const [k, v] of map) enMap.set(k, v);
-                setProgress(Math.round(((i + 75) / uniqueNames.length) * 40));
+                setProgress(Math.round(((i + 75) / normalEntries.length) * 40));
             }
             batchOk = true;
         } catch (e) { console.warn('Batch request failed, attempting manual searches', e); }
 
         if (!batchOk || enMap.size < uniqueNames.length) {
-            const missing = uniqueNames.filter(e =>
+            const missing = normalEntries.filter(e =>
                 !enMap.has(normalizeCardName(e.name)) &&
                 !(e.setCode && e.collectorNumber && enMap.has(`${e.setCode}:${e.collectorNumber}`))
             );
@@ -74,7 +117,7 @@ async function loadDeck() {
                     if (controller.signal.aborted) return;
                     try {
                         const res = await fetchWithRetry(
-                            'https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(entry.name),
+                            'https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(sanitizeNameForApi(entry.name)),
                             { signal: controller.signal }
                         );
                         if (res && res.ok) {
@@ -101,11 +144,58 @@ async function loadDeck() {
                 const resolvedCard = (pinnedKey && enMap.get(pinnedKey)) || enMap.get(normalizeCardName(e.name));
                 if (!resolvedCard) return null;
                 const canonicalName = resolvedCard.name.split(' // ')[0].trim();
-                return { entry: e, canonicalName, canonicalKey: normalizeCardName(canonicalName) };
+                return { entry: e, canonicalName, canonicalKey: normalizeCardName(canonicalName), pinnedKey };
             }).filter(Boolean);
 
+            const pinnedEntries = needsLang.filter(n => n.pinnedKey);
+            // freeEntries es mutable: las pineadas sin traducción caerán aquí tras el 404
+            const freeEntries   = needsLang.filter(n => !n.pinnedKey);
+
+            if (pinnedEntries.length > 0) {
+                let done = 0;
+                const pinnedTasks = pinnedEntries.map(({ entry, canonicalName, canonicalKey, pinnedKey }) => async () => {
+                    if (controller.signal.aborted) return;
+                    const cacheKey = pinnedKey + '|' + targetLang;
+                    if (state.langCache[cacheKey]) {
+                        langMap.set(normalizeCardName(entry.name), state.langCache[cacheKey]);
+                    } else {
+                        try {
+                            const [setC, numC] = pinnedKey.split(':');
+                            const url = `https://api.scryfall.com/cards/${setC}/${numC}/${targetLang}`;
+                            const res = await fetchWithRetry(url, { signal: controller.signal });
+                            if (res && res.ok) {
+                                const card = await res.json();
+                                if (hasValidImage(card)) {
+                                    langMap.set(normalizeCardName(entry.name), card);
+                                    state.langCache[cacheKey] = card;
+                                } else {
+                                    // Imagen no válida → soltar pin y buscar libre
+                                    state.pinnedPrints.delete(normalizeCardName(entry.name));
+                                    entry.setCode = null; entry.collectorNumber = null;
+                                    freeEntries.push({ entry, canonicalName, canonicalKey });
+                                }
+                            } else {
+                                // 404 u otro error → esa edición no existe en este idioma.
+                                // Soltamos el pin y dejamos que el batch libre encuentre
+                                // cualquier impresión traducida de esta carta.
+                                state.pinnedPrints.delete(normalizeCardName(entry.name));
+                                entry.setCode = null; entry.collectorNumber = null;
+                                freeEntries.push({ entry, canonicalName, canonicalKey });
+                            }
+                        } catch (e) {
+                            // Error de red → mismo fallback
+                            state.pinnedPrints.delete(normalizeCardName(entry.name));
+                            entry.setCode = null; entry.collectorNumber = null;
+                            freeEntries.push({ entry, canonicalName, canonicalKey });
+                        }
+                    }
+                    done++; setProgress(40 + Math.round((done / needsLang.length) * 40));
+                });
+                await runWithConcurrency(pinnedTasks, 4);
+            }
+
             const toFetch = [];
-            for (const { entry, canonicalName, canonicalKey } of needsLang) {
+            for (const { entry, canonicalName, canonicalKey } of freeEntries) {
                 const cacheKey = canonicalKey + '|' + targetLang;
                 if (state.langCache[cacheKey]) langMap.set(normalizeCardName(entry.name), state.langCache[cacheKey]);
                 else if (!toFetch.find(n => normalizeCardName(n) === canonicalKey)) toFetch.push(canonicalName);
@@ -119,7 +209,7 @@ async function loadDeck() {
                     if (controller.signal.aborted) break;
                     try {
                         const batchMap = await fetchCardLangBatch(batch, targetLang, controller.signal);
-                        for (const { entry, canonicalName, canonicalKey } of needsLang) {
+                        for (const { entry, canonicalName, canonicalKey } of freeEntries) {
                             if (!batch.includes(canonicalName)) continue;
                             const card = batchMap.get(canonicalKey);
                             if (card) {
@@ -138,7 +228,7 @@ async function loadDeck() {
 
         // ── Phase 3: build cards[] ────────────────────────────────────────────
         let errors = 0;
-        for (const { qty, name, setCode, collectorNumber } of parsed) {
+        for (const { qty, name, setCode, collectorNumber, _isToken } of parsed) {
             const key = normalizeCardName(name);
             const pinnedKey = setCode && collectorNumber ? `${setCode}:${collectorNumber}` : null;
 
@@ -172,7 +262,12 @@ async function loadDeck() {
                 setCode:         data.set ? data.set.toUpperCase() : '---',
                 collectorNumber: data.collector_number || null,
                 error:           false,
-                hqLoaded:        false
+                hqLoaded:        false,
+                _isToken:        !!_isToken,
+                // Si esta carta llegó con set+número (línea explícita o pin recuperado de
+                // state.pinnedPrints), queda marcada como fijada para que syncDeckInput
+                // siga anotándola y el pin persista en próximas recargas.
+                _pinnedPrint:    !!pinnedKey
             });
         }
 
@@ -235,9 +330,14 @@ async function updateAllToLatestArts() {
                 card.lang         = latest.lang || targetLang;
                 card.printId      = latest.id;
                 card.setCode      = latest.set ? latest.set.toUpperCase() : '---';
+                card.collectorNumber = latest.collector_number || null;
                 card.hqLoaded     = false;
                 card._blob        = null;
                 card._blob2       = null;
+                // "Latest Arts" es lo opuesto a fijar una edición concreta: suelta el pin
+                // para que futuras recargas vuelvan a tomar la edición más reciente.
+                if (card._pinnedPrint) state.pinnedPrints.delete(normalizeCardName(card.name));
+                card._pinnedPrint = false;
             }
         } catch (e) {
             console.error("Error updating:", card.name, e);
@@ -261,18 +361,107 @@ function syncDeckInput() {
     const inputEl = document.getElementById('deck-input');
     if (!inputEl) return;
     inputEl.value = state.cards
-        .filter(c => !c.error && !c._isCustom)
+        .filter(c => !c._isCustom)
         .map(c => {
-            if (c.setCode && c.setCode !== '---' && c.collectorNumber) {
-                return `${c.qty} ${c.name} (${c.setCode}) ${c.collectorNumber}`;
+            if (c.error) return `${c.qty} ${c._isToken ? 'T:' : ''}${c.name}`;
+            const prefix = c._isToken ? 'T:' : '';
+            if (c._pinnedPrint && c.setCode && c.setCode !== '---' && c.collectorNumber) {
+                return `${c.qty} ${prefix}${c.name} (${c.setCode}) ${c.collectorNumber}`;
             }
-            return `${c.qty} ${c.name}`;
+            return `${c.qty} ${prefix}${c.name}`;
         })
         .join('\n');
-    updateStats(parseArena(inputEl.value));
+    updateStats(state.cards.filter(c => !c.error));
+    persistDeckState();
+}
+
+// ── Help panel ────────────────────────────────────────────────────────────────
+function toggleHelpPanel() {
+    const panel   = document.getElementById('help-panel');
+    const overlay = document.getElementById('help-overlay');
+    const isOpen  = panel.classList.contains('open');
+    panel.classList.toggle('open', !isOpen);
+    overlay.classList.toggle('open', !isOpen);
+    document.body.style.overflow = isOpen ? '' : 'hidden';
+}
+
+function copyExample(btn) {
+    const pre = btn.closest('.help-example').querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.textContent.trim()).then(() => {
+        btn.classList.add('copied');
+        const span = btn.querySelector('span');
+        const original = span.textContent;
+        span.textContent = '✓';
+        setTimeout(() => { btn.classList.remove('copied'); span.textContent = original; }, 1800);
+    }).catch(() => {
+        // Fallback para navegadores sin clipboard API
+        const ta = document.createElement('textarea');
+        ta.value = pre.textContent.trim();
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    });
+}
+
+// ── localStorage persistence ──────────────────────────────────────────────────
+const LS_KEY = 'proxyprints_deck';
+
+function persistDeckState() {
+    try {
+        const inputEl = document.getElementById('deck-input');
+        const payload = {
+            decklist: inputEl ? inputEl.value : '',
+            pinnedPrints: [...state.pinnedPrints.entries()],  // Map → array serializable
+            savedAt: Date.now()
+        };
+        localStorage.setItem(LS_KEY, JSON.stringify(payload));
+    } catch (e) { /* cuota excedida u otro error, ignorar silenciosamente */ }
+}
+
+function restoreLastDeck() {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return;
+        const payload = JSON.parse(raw);
+
+        // Restaurar decklist en el textarea
+        const inputEl = document.getElementById('deck-input');
+        if (inputEl && payload.decklist) {
+            inputEl.value = payload.decklist;
+            updateStats(parseArena(payload.decklist));
+        }
+
+        // Restaurar pinnedPrints
+        if (Array.isArray(payload.pinnedPrints)) {
+            state.pinnedPrints = new Map(payload.pinnedPrints);
+        }
+
+        // Lanzar carga automáticamente para que el grid se reconstruya
+        loadDeck();
+    } catch (e) {
+        console.warn('ProxyPrints: error restaurando mazo anterior', e);
+    }
+}
+
+function initRestoreButton() {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return;
+        const payload = JSON.parse(raw);
+        // Solo mostrar el botón si hay algo guardado con al menos una carta
+        if (payload.decklist && payload.decklist.trim().length > 3) {
+            const btn = document.getElementById('btn-restore');
+            if (btn) btn.style.display = '';
+        }
+    } catch (e) { }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.getElementById('deck-input').addEventListener('input', function () {
     updateStats(parseArena(this.value));
+    persistDeckState();  // Guardar también cuando el usuario escribe manualmente
 });
+
+initRestoreButton();
