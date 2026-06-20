@@ -4,10 +4,10 @@
 // ── Batch collection fetch (CORREGIDO) ────────────────────────────────────────
 async function fetchCollectionBatch(entries) {
     const identifiers = entries.map(e => {
-        if (typeof e === 'string') return { name: e };
+        if (typeof e === 'string') return { name: sanitizeNameForApi(e) };
         if (e.id) return { id: e.id }; // ◄ CORRECCIÓN 1: Soportar búsqueda directa por ID de Scryfall
         if (e.setCode && e.collectorNumber) return { set: e.setCode, collector_number: e.collectorNumber };
-        return { name: e.name };
+        return { name: sanitizeNameForApi(e.name) };
     });
     
     const body = JSON.stringify({ identifiers });
@@ -31,7 +31,7 @@ async function fetchCollectionBatch(entries) {
         if (!nf.name) continue;
         try {
             await new Promise(r => setTimeout(r, 100));
-            const rRes = await fetchWithRetry('https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(nf.name));
+            const rRes = await fetchWithRetry('https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(sanitizeNameForApi(nf.name)));
             if (rRes && rRes.ok) {
                 const rCard = await rRes.json();
                 map.set(normalizeCardName(nf.name), rCard);
