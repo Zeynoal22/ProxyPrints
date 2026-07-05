@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Proxymancer | Proxy Studio</title>
+    <title>AetherForge | Proxy Studio</title>
     <link rel="stylesheet" href="css/styles.css" />
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
@@ -255,7 +255,7 @@
         <div class="brand">
             <div class="logo-icon"></div>
             <div>
-                <h1>Proxymancer <span> Proxy Studio</span></h1>
+                <h1>AetherForge <span> Proxy Studio</span></h1>
                 Created by <a href="https://x.com/CPlaneswalkers" target="_blank" style="color: var(--gold); font-weight: bold;">@CPlaneswalkers</a>
             </div>
         </div>
@@ -289,6 +289,27 @@
             <span data-i18n="beta_notice_post"></span>
         </span>
         <button class="beta-banner-close" onclick="this.parentElement.style.display='none'" title="Dismiss">✕</button>
+    </div>
+
+    <!-- ── Action bar — fija abajo ──────────────────────────────────────── -->
+    <div id="action-bar">
+        <button type="button" class="action-bar-btn action-bar-primary" id="btn-load" onclick="loadDeck()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" /></svg>
+            <span data-i18n="btn_sync">Sync Cards</span>
+        </button>
+        <button type="button" class="action-bar-btn action-bar-secondary" id="btn-restore" onclick="restoreLastDeck()" style="display:none">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span data-i18n="btn_restore">Load Previous Deck</span>
+        </button>
+        <button type="button" class="action-bar-btn action-bar-secondary" id="btn-custom-upload" onclick="document.getElementById('custom-img-input').click()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            <span data-i18n="btn_custom_upload">Add Custom Card</span>
+        </button>
+        <input type="file" id="custom-img-input" accept="image/*" multiple style="display:none" onchange="handleCustomUpload(this)" />
+        <button type="button" class="action-bar-btn action-bar-gold" id="btn-pdf" onclick="generatePDF()" disabled>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+            <span data-i18n="btn_pdf">Generate PDF</span>
+        </button>
     </div>
 
     <main>
@@ -427,23 +448,7 @@
                 <div id="log" data-i18n="log_init">Enter a structured decklist to initialize the forge.</div>
             </div>
 
-            <div style="display:flex; flex-direction:column; gap:12px; margin-top:auto;">
-                <button type="button" class="btn btn-primary" id="btn-load" onclick="loadDeck()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" /></svg> <span data-i18n="btn_sync">Sync Cards</span>
-                </button>
-                <button type="button" class="btn btn-secondary" id="btn-restore" onclick="restoreLastDeck()" style="display:none">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                    <span data-i18n="btn_restore">Load Previous Deck</span>
-                </button>
-                <button type="button" class="btn btn-secondary" id="btn-custom-upload" onclick="document.getElementById('custom-img-input').click()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                    <span data-i18n="btn_custom_upload">Add Custom Card</span>
-                </button>
-                <input type="file" id="custom-img-input" accept="image/*" multiple style="display:none" onchange="handleCustomUpload(this)" />
-                <button type="button" class="btn btn-gold" id="btn-pdf" onclick="generatePDF()" disabled>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg> <span data-i18n="btn_pdf">Generate Proxy File</span>
-                </button>
-            </div>
+
         </div>
 
         <div class="preview-wrap">
@@ -521,7 +526,7 @@
     <div id="help-overlay" onclick="if(event.target===this) toggleHelpPanel()"></div>
     <aside id="help-panel">
         <div class="help-header">
-            <span data-i18n="help_title">How to use Proxymancer</span>
+            <span data-i18n="help_title">How to use AetherForge</span>
             <button onclick="toggleHelpPanel()">✕</button>
         </div>
         <div class="help-body">
@@ -602,7 +607,7 @@
             <details>
                 <summary data-i18n="help_s7_title">💾 Save and restore your deck</summary>
                 <div class="help-section">
-                    <p data-i18n="help_s7_p1">Proxymancer automatically saves your decklist and pinned arts in your browser's local storage every time you make a change.</p>
+                    <p data-i18n="help_s7_p1">AetherForge automatically saves your decklist and pinned arts in your browser's local storage every time you make a change.</p>
                     <p data-i18n="help_s7_p2">Use the <strong>Load Previous Deck</strong> button to restore the last saved deck, including all art choices.</p>
                     <p data-i18n="help_s7_p3">⚠ Clearing your browser data will erase saved decks. To keep your work safe, copy the decklist text to a file.</p>
                 </div>
