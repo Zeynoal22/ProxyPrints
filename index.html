@@ -615,5 +615,14 @@
 
         </div>
     </aside>
+    <!-- ── Scroll to top ──────────────────────────────────────────────────── -->
+    <button id="btn-scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+    </button>
+    <script>
+        window.addEventListener('scroll', () => {
+            document.getElementById('btn-scroll-top').classList.toggle('visible', window.scrollY > 300);
+        }, { passive: true });
+    </script>
 </body>
 </html>
