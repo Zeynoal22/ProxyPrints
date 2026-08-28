@@ -1341,6 +1341,85 @@
     color: var(--error);
 }
 
+/* ── Asignación de reversos por rangos ─────────────────────────────────── */
+.back-ranges-block {
+    width: 100%;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+}
+
+.back-range-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.range-num-input {
+    width: 64px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.range-dash {
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+#range-back-select {
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.82rem;
+}
+
+.back-ranges-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.back-range-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.back-range-row img {
+    width: 28px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+}
+
+.back-range-row .range-label {
+    font-size: 0.82rem;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.back-range-row .range-remove-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--error);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
 /* ── Action bar (fija abajo) ────────────────────────────────────────────── */
 #action-bar {
     position: fixed;
