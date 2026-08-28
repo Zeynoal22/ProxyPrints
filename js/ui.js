@@ -586,9 +586,127 @@ function updateBulkBackPanel() {
                 </div>
             `).join('');
         }
+
+        const rangeSelect = document.getElementById('range-back-select');
+        if (rangeSelect && rangeSelect.options.length <= 1) {
+            BACK_PRESETS.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.url;
+                opt.textContent = p.name;
+                rangeSelect.appendChild(opt);
+            });
+        }
+
+        // Ajustamos los placeholders "Desde/Hasta" al tamaño real del mazo
+        const rangeTo = document.getElementById('range-to');
+        if (rangeTo && !rangeTo.value) rangeTo.placeholder = String(state.cards.length);
     } else {
         panel.classList.remove('active');
     }
+}
+
+// ── Aplicar un reverso a TODAS las cartas de una vez ──────────────────────────
+function selectAllForBack() {
+    const validCards = state.cards.filter(c => !c.error);
+    if (!validCards.length) {
+        setLog(t('log_select_back_error'), 'error');
+        return;
+    }
+    state.cards.forEach(c => { if (!c.error) c._selectedForBack = true; });
+    renderPreview();
+    setLog(t('log_all_selected_back', validCards.length), 'ok');
+}
+
+// ── Asignación de reversos por rangos ─────────────────────────────────────────
+// state._backRanges: [{ from, to, url, label }]
+if (typeof state._backRanges === 'undefined') {
+    state._backRanges = [];
+}
+// URL temporal guardada cuando el usuario sube una imagen personalizada para un rango,
+// a la espera de que pulse "+ Añadir Rango"
+let _pendingRangeCustomUrl = null;
+
+function handleRangeCustomUpload(input) {
+    const file = input.files?.[0];
+    if (!file) return;
+    _pendingRangeCustomUrl = URL.createObjectURL(file);
+    // Reflejamos visualmente que hay una imagen personalizada lista para usarse
+    const select = document.getElementById('range-back-select');
+    if (select) select.value = '';
+    setLog(t('log_range_custom_ready'), 'ok');
+    input.value = '';
+}
+
+function addBackRange() {
+    const fromEl = document.getElementById('range-from');
+    const toEl   = document.getElementById('range-to');
+    const selectEl = document.getElementById('range-back-select');
+
+    const from = parseInt(fromEl.value, 10);
+    const to   = parseInt(toEl.value, 10);
+    const url  = _pendingRangeCustomUrl || selectEl.value;
+
+    if (!from || !to || from < 1 || to < from) {
+        setLog(t('log_range_invalid'), 'error');
+        return;
+    }
+    if (!url) {
+        setLog(t('log_range_no_back'), 'error');
+        return;
+    }
+
+    const preset = BACK_PRESETS.find(p => p.url === url);
+    const label = preset ? preset.name : t('back_range_custom_label');
+
+    state._backRanges.push({ from, to, url, label });
+    _pendingRangeCustomUrl = null;
+    selectEl.value = '';
+    fromEl.value = '';
+    toEl.value = '';
+
+    renderBackRangesList();
+}
+
+function renderBackRangesList() {
+    const list = document.getElementById('back-ranges-list');
+    if (!list) return;
+
+    list.innerHTML = state._backRanges.map((r, i) => `
+        <div class="back-range-row">
+            <img src="${r.url}" alt="${escHtml(r.label)}" />
+            <span class="range-label">${r.from} – ${r.to} → ${escHtml(r.label)}</span>
+            <button class="range-remove-btn" title="${escHtml(t('back_range_remove'))}" onclick="removeBackRange(${i})">✕</button>
+        </div>
+    `).join('');
+}
+
+function removeBackRange(idx) {
+    state._backRanges.splice(idx, 1);
+    renderBackRangesList();
+}
+
+function applyBackRanges() {
+    if (!state._backRanges.length) {
+        setLog(t('log_range_none_defined'), 'error');
+        return;
+    }
+
+    let affected = 0;
+    state._backRanges.forEach(r => {
+        // Rangos en base 1 (tal y como se ven en el grid), inclusivos en ambos extremos
+        const startIdx = Math.max(0, r.from - 1);
+        const endIdx   = Math.min(state.cards.length - 1, r.to - 1);
+        for (let i = startIdx; i <= endIdx; i++) {
+            const card = state.cards[i];
+            if (!card || card.error) continue;
+            card.backUrl = r.url;
+            card._backBlob = null;
+            affected++;
+        }
+    });
+
+    renderPreview();
+    setLog(t('log_ranges_applied', affected), affected ? 'ok' : 'error');
 }
 
 function assignBackToSelected(url) {
