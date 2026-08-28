@@ -485,13 +485,35 @@
     
     <button class="btn-action-sec" onclick="document.getElementById('custom-back-input').click()">+ Custom Image</button>
     <input type="file" id="custom-back-input" accept="image/*" style="display:none" onchange="handleCustomBackUpload(this)" />
-    
+
+    <button class="btn-action-sec" id="btn-select-all-back" onclick="selectAllForBack()" data-i18n="btn_select_all_back">🗂️ Seleccionar Todas</button>
     <button class="btn-action-sec" id="btn-toggle-back-preview" onclick="toggleBackPreviewMode()" data-i18n="btn_preview_backs">👁️ Previsualizar Reversos</button>
     <button class="btn-action-sec btn-right-align" onclick="clearBackSelection()" data-i18n="btn_clear_back_sel">Limpiar Selección</button>
 
     <div class="back-warning-notice">
         <span>⚠️</span>
         <span data-i18n="back_warning_notice">Modo Reverso Activo: Al hacer clic sobre las cartas las seleccionas para cambiar su dorso. Si deseas modificar su arte, idioma o edición original, desactiva momentáneamente la opción "Doble Cara (Duplex)" en el panel izquierdo para abrir el editor.</span>
+    </div>
+
+    <!-- ── Asignación de reversos por rangos ────────────────────────────────── -->
+    <div class="bulk-back-group back-ranges-block">
+        <span class="field-label" data-i18n="back_ranges_title">Asignar reversos por rangos (ej. 1-50, 51-70...)</span>
+
+        <div class="back-range-form">
+            <input type="number" id="range-from" class="range-num-input" min="1" placeholder="1" />
+            <span class="range-dash">–</span>
+            <input type="number" id="range-to" class="range-num-input" min="1" placeholder="50" />
+            <select id="range-back-select">
+                <option value="" data-i18n="back_range_choose">Elegir reverso...</option>
+            </select>
+            <button class="btn-action-sec" onclick="document.getElementById('range-custom-input').click()" data-i18n="back_range_custom_btn">+ Personalizado</button>
+            <input type="file" id="range-custom-input" accept="image/*" style="display:none" onchange="handleRangeCustomUpload(this)" />
+            <button class="btn-action-sec btn-gold" onclick="addBackRange()" data-i18n="back_range_add">+ Añadir Rango</button>
+        </div>
+
+        <div id="back-ranges-list" class="back-ranges-list"></div>
+
+        <button class="btn-action-sec btn-right-align" onclick="applyBackRanges()" data-i18n="back_range_apply">✓ Aplicar Rangos a las Cartas</button>
     </div>
 </div>
 
